@@ -2977,46 +2977,10 @@ var express = require('express'),
 			});
 			util.log('Mockups written to ' + loc + '!');
 		};
-	})(),
-	generateVersionControlHash = (() => {
-		let crypto = require('crypto');
-		let write = (() => {
-			let hash = [null, null];
-			return (loc, data, numb) => {
-				// The callback is executed on reading completion
-				hash[numb] = crypto.createHash('sha1').update(data).digest('hex');
-				if (hash[0] && hash[1]) {
-					let finalHash = hash[0] + hash[1];
-					util.log('Client hash generated. Hash is "' + finalHash + '".');
-					// Write the hash to a place the client can read it.
-					fs.writeFileSync(loc, finalHash, 'utf8', err => {
-						if (err) return util.error(err);
-					});
-					util.log('Hash written to ' + loc + '!');
-				}
-			};
-		})();
-		return loc => {
-			let path1 = __dirname + '/../client/js/app.js';
-			let path2 = __dirname + '/lib/definitions.js';
-			util.log('Building client version hash, reading from ' + path1 + ' and ' + path2 + '...');
-			// Read the client application
-			fs.readFile(path1, 'utf8', (err, data) => {
-				if (err) return util.error(err);
-				util.log('app.js complete.');
-				write(loc, data, 0);
-			});
-			fs.readFile(path2, 'utf8', (err, data) => {
-				if (err) return util.error(err);
-				util.log('definitions.js complete.');
-				write(loc, data, 1);
-			});
-		};
 	})();
 
 // Give the client upon request
 exportDefintionsToClient(__dirname + '/../client/json/mockups.json');
-generateVersionControlHash(__dirname + '/../client/api/vhash');
 if (c.servesStatic) app.use(express.static(__dirname + '/../client'));
 
 // Websocket behavior
