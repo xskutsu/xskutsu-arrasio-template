@@ -5,9 +5,6 @@
 "use strict";
 
 // General requires
-require('google-closure-library');
-goog.require('goog.structs.PriorityQueue');
-goog.require('goog.structs.QuadTree');
 
 // Import game settings.
 const c = require('./config.json');
@@ -364,7 +361,7 @@ var Class = (() => {
 
 // Define IOs (AI)
 function nearest(array, location, test = () => { return true; }) {
-	let list = new goog.structs.PriorityQueue();
+	let list = [];
 	let d;
 	if (!array.length) {
 		return undefined;
@@ -372,10 +369,11 @@ function nearest(array, location, test = () => { return true; }) {
 	array.forEach(function (instance) {
 		d = Math.pow(instance.x - location.x, 2) + Math.pow(instance.y - location.y, 2);
 		if (test(instance, d)) {
-			list.enqueue(d, instance);
+			list.push({ p: d, v: instance });
 		}
 	});
-	return list.dequeue();
+	list.sort((a, b) => a.p - b.p);
+	return list.length ? list[0].v : undefined;
 }
 function timeOfImpact(p, v, s) {
 	// Requires relative position and velocity to aiming point
@@ -2826,14 +2824,15 @@ var express = require('express'),
 			let chooseFurthestAndRemove = function (furthestFrom) {
 				let index = 0;
 				if (furthestFrom != -1) {
-					let list = new goog.structs.PriorityQueue();
+					let list = [];
 					let d;
 					for (let i = 0; i < endpoints.length; i++) {
 						let thisPoint = endpoints[i];
 						d = Math.pow(thisPoint.x - furthestFrom.x, 2) + Math.pow(thisPoint.y - furthestFrom.y, 2) + 1;
-						list.enqueue(1 / d, i);
+						list.push({ p: 1 / d, v: i });
 					}
-					index = list.dequeue();
+					list.sort((a, b) => a.p - b.p);
+					index = list[0].v;
 				}
 				let output = endpoints[index];
 				endpoints.splice(index, 1);
@@ -2843,7 +2842,7 @@ var express = require('express'),
 			let point2 = chooseFurthestAndRemove(point1); // And the point furthest from that
 			// And the point which maximizes the area of our triangle (a loose look at this one)
 			let chooseBiggestTriangleAndRemove = function (point1, point2) {
-				let list = new goog.structs.PriorityQueue();
+				let list = [];
 				let index = 0;
 				let a;
 				for (let i = 0; i < endpoints.length; i++) {
@@ -2854,9 +2853,10 @@ var express = require('express'),
 					* (because it's always the same) nor divide by 2 to get the
 					* actual area (because we're just comparing it)
 					*/
-					list.enqueue(1 / a, i);
+					list.push({ p: 1 / a, v: i });
 				}
-				index = list.dequeue();
+				list.sort((a, b) => a.p - b.p);
+				index = list[0].v;
 				let output = endpoints[index];
 				endpoints.splice(index, 1);
 				return output;
@@ -3989,7 +3989,13 @@ const sockets = (() => {
 				const getleaderboard = (() => {
 					let lb = { full: [], updates: [], };
 					// We'll reuse these lists over and over again
-					let list = new goog.structs.PriorityQueue();
+					let list = {
+						data: [],
+						enqueue: function (p, v) { this.data.push({ p, v }); },
+						dequeue: function () { this.data.sort((a, b) => a.p - b.p); return this.data.shift().v; },
+						clear: function () { this.data = []; },
+						getCount: function () { return this.data.length; }
+					};
 					// This puts things in the data structure
 					function listify(instance) {
 						if (

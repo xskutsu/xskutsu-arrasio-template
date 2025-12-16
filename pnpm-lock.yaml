@@ -11,12 +11,6 @@ importers:
       express:
         specifier: ^5.2.1
         version: 5.2.1
-      google-closure-library:
-        specifier: ^20170910.0.0
-        version: 20170910.0.0
-      seedrandom:
-        specifier: ^2.4.3
-        version: 2.4.4
       ws:
         specifier: ^8.18.3
         version: 8.18.3
@@ -129,9 +123,6 @@ packages:
     resolution: {integrity: sha512-sTSfBjoXBp89JvIKIefqw7U2CCebsc74kiY6awiGogKtoSGbgjYE/G/+l9sF3MWFPNc9IcoOC4ODfKHfxFmp0g==}
     engines: {node: '>= 0.4'}
 
-  google-closure-library@20170910.0.0:
-    resolution: {integrity: sha512-H5uGD4ew7Pd2NXD7TOxKW2sGble6Q+4A0rWbyvwgIbN0/vw3dhjeahbnv5u36a3VaDNjyQY9VP/38wlX35LA2g==}
-
   gopd@1.2.0:
     resolution: {integrity: sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg==}
     engines: {node: '>= 0.4'}
@@ -229,9 +220,6 @@ packages:
 
   safer-buffer@2.1.2:
     resolution: {integrity: sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==}
-
-  seedrandom@2.4.4:
-    resolution: {integrity: sha512-9A+PDmgm+2du77B5i0Ip2cxOqqHjgNxnBgglxLcX78A2D6c2rTo61z4jnVABpF4cKeDMDG+cmXXvdnqse2VqMA==}
 
   send@1.2.1:
     resolution: {integrity: sha512-1gnZf7DFcoIcajTjTwjwuDjzuz4PPcY2StKPlsGAQ1+YH20IRVrBaXSWmdjowTJ6u8Rc01PoYOGHXfP1mYcZNQ==}
@@ -432,8 +420,6 @@ snapshots:
       dunder-proto: 1.0.1
       es-object-atoms: 1.1.1
 
-  google-closure-library@20170910.0.0: {}
-
   gopd@1.2.0: {}
 
   has-symbols@1.1.0: {}
@@ -519,8 +505,6 @@ snapshots:
       - supports-color
 
   safer-buffer@2.1.2: {}
-
-  seedrandom@2.4.4: {}
 
   send@1.2.1:
     dependencies:

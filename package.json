@@ -14,7 +14,6 @@
 	],
 	"dependencies": {
 		"express": "^5.2.1",
-		"google-closure-library": "^20170910.0.0",
 		"ws": "^8.18.3"
 	}
 }
