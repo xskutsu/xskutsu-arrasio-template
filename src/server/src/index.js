@@ -4858,9 +4858,9 @@ var maintainloop = (() => {
 				case 5: a = Class.hugePentagon; break;
 				default: throw ('bad food level');
 			}
-			if (a !== {}) {
+			if (a.hasOwnProperty("index")) {
 				a.BODY.ACCELERATION = 0.015 / (a.FOOD.LEVEL + 1);
-			}
+			};
 			return a;
 		}
 		let placeNewFood = (position, scatter, level, allowInNest = false) => {
