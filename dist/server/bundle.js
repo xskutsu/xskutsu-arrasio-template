@@ -1,4 +1,4 @@
-This code is licensed under the GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007.
+// This code is licensed under the GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007.
 
 "use strict";
 var __getOwnPropNames = Object.getOwnPropertyNames;
@@ -8765,40 +8765,7 @@ var require_index = __commonJS({
         util.log("Mockups written to " + loc + "!");
       };
     })();
-    var generateVersionControlHash = (() => {
-      let crypto = __require("crypto");
-      let write = /* @__PURE__ */ (() => {
-        let hash = [null, null];
-        return (loc, data, numb) => {
-          hash[numb] = crypto.createHash("sha1").update(data).digest("hex");
-          if (hash[0] && hash[1]) {
-            let finalHash = hash[0] + hash[1];
-            util.log('Client hash generated. Hash is "' + finalHash + '".');
-            fs.writeFileSync(loc, finalHash, "utf8", (err) => {
-              if (err) return util.error(err);
-            });
-            util.log("Hash written to " + loc + "!");
-          }
-        };
-      })();
-      return (loc) => {
-        let path1 = __dirname + "/../client/js/app.js";
-        let path2 = __dirname + "/lib/definitions.js";
-        util.log("Building client version hash, reading from " + path1 + " and " + path2 + "...");
-        fs.readFile(path1, "utf8", (err, data) => {
-          if (err) return util.error(err);
-          util.log("app.js complete.");
-          write(loc, data, 0);
-        });
-        fs.readFile(path2, "utf8", (err, data) => {
-          if (err) return util.error(err);
-          util.log("definitions.js complete.");
-          write(loc, data, 1);
-        });
-      };
-    })();
-    exportDefintionsToClient(__dirname + "/../client/json/mockups.json");
-    generateVersionControlHash(__dirname + "/../client/api/vhash");
+    exportDefintionsToClient(__dirname + "./dist/mockups.json");
     if (c.servesStatic) app.use(express.static(__dirname + "/../client"));
     var sockets = (() => {
       const protocol = require_fasttalk();
