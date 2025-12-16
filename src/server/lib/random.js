@@ -1,32 +1,68 @@
 /*jslint node: true */
 "use strict";
 
-require('seedrandom');
-// Seed math
-Math.seedrandom('' + Date.now());
+function cyrb128(text) {
+	let h1 = 1779033703;
+	let h2 = 3144134277;
+	let h3 = 1013904242;
+	let h4 = 2773480762;
+	for (let i = 0, k; i < text.length; i++) {
+		k = text.charCodeAt(i);
+		h1 = h2 ^ Math.imul(h1 ^ k, 597399067);
+		h2 = h3 ^ Math.imul(h2 ^ k, 2869860233);
+		h3 = h4 ^ Math.imul(h3 ^ k, 951274213);
+		h4 = h1 ^ Math.imul(h4 ^ k, 2716044179);
+	}
+	h1 = Math.imul(h3 ^ (h1 >>> 18), 597399067);
+	h2 = Math.imul(h4 ^ (h2 >>> 22), 2869860233);
+	h3 = Math.imul(h1 ^ (h3 >>> 17), 951274213);
+	h4 = Math.imul(h2 ^ (h4 >>> 19), 2716044179);
+	return [
+		(h1 ^ h2 ^ h3 ^ h4) >>> 0,
+		(h2 ^ h1) >>> 0,
+		(h3 ^ h1) >>> 0,
+		(h4 ^ h1) >>> 0
+	];
+}
+
+function* sfc32(seed) {
+	let [a, b, c, d] = cyrb128(seed);
+	while (true) {
+		a |= 0; b |= 0; c |= 0; d |= 0;
+		let t = (a + b | 0) + d | 0;
+		d = d + 1 | 0;
+		a = b ^ b >>> 9;
+		b = c + (c << 3) | 0;
+		c = (c << 21 | c >>> 11);
+		c = c + t | 0;
+		yield (t >>> 0) / 4294967296;
+	}
+}
+
+const seededRandom = sfc32("" + Date.now());
 
 exports.random = x => {
-	return x * Math.random();
+	return x * seededRandom.next().value;
 };
 
 exports.randomAngle = () => {
-	return Math.PI * 2 * Math.random();
+	return Math.PI * 2 * seededRandom.next().value;
 };
 
 exports.randomRange = (min, max) => {
-	return Math.random() * (max - min) + min;
+	return seededRandom.next().value * (max - min) + min;
 };
 
 exports.irandom = i => {
 	let max = Math.floor(i);
-	return Math.floor(Math.random() * (max + 1)); //Inclusive
+	return Math.floor(seededRandom.next().value * (max + 1)); //Inclusive
 };
 
 exports.gauss = (mean, deviation) => {
 	let x1, x2, w;
 	do {
-		x1 = 2 * Math.random() - 1;
-		x2 = 2 * Math.random() - 1;
+		x1 = 2 * seededRandom.next().value - 1;
+		x2 = 2 * seededRandom.next().value - 1;
 		w = x1 * x1 + x2 * x2;
 	} while (0 == w || w >= 1);
 

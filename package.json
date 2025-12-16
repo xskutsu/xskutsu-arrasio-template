@@ -15,7 +15,6 @@
 	"dependencies": {
 		"express": "^5.2.1",
 		"google-closure-library": "^20170910.0.0",
-		"seedrandom": "^2.4.3",
 		"ws": "^8.18.3"
 	}
 }
