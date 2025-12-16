@@ -4,7 +4,13 @@
 	"description": "A fanmade sequel to diep.io",
 	"main": "server/server.js",
 	"scripts": {
-		"start": "node src/server/server.js"
+		"start": "node dist/server/bundle.js",
+		"build": "node/scripts/esbuild.cjs",
+		"check:server": "tsc -p src/server/tsconfig.json --noEmit",
+		"check:client": "tsc -p src/client/tsconfig.json --noEmit",
+		"check": "pnpm run check:server && pnpm run check:client",
+		"clean": "node scripts/clean.cjs",
+		"watch": "node scripts/esbuild.cjs --watch"
 	},
 	"author": "Marisa Smith",
 	"license": "GPL-3.0-only",
@@ -20,6 +26,7 @@
 		"@types/express": "^5.0.6",
 		"@types/node": "^25.0.2",
 		"@types/ws": "^8.18.1",
-		"esbuild": "^0.27.1"
+		"esbuild": "^0.27.1",
+		"typescript": "^5.9.3"
 	}
 }
