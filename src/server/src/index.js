@@ -4150,7 +4150,9 @@ const sockets = (() => {
 						lb = readlb(socket.status.needsFullLeaderboard);
 						socket.status.needsFullLeaderboard = false;
 						// Don't broadcast if you don't need to
-						if (m !== [0] || lb !== [0, 0]) { socket.talk('b', ...m, ...lb); }
+						if (m.length !== 1 || m[0] !== 0 || lb.length !== 2 || lb[0] !== 0 || lb[1] !== 0) {
+							socket.talk('b', ...m, ...lb);
+						}
 					}
 				};
 			})();
