@@ -1,7 +1,7 @@
 const esbuild = require("esbuild");
 const isWatch = process.argv.includes("--watch");
 const banner = `
-This code is licensed under the GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007.
+// This code is licensed under the GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007.
 
 "use strict";
 `.trim();
