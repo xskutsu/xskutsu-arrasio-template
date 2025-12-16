@@ -5179,5 +5179,8 @@ process.on("SIGINT", () => {
 				process.exit();
 			}, 3000);
 		}, 17000);
+	} else {
+		util.log("Forcefully shutting down...");
+		process.exit();
 	}
 });
