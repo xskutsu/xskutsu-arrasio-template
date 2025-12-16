@@ -79,29 +79,6 @@ exports.loopSmooth = (angle, desired, slowness) => {
     return exports.loopClamp(angle, arc[0], arc[1]) == angle;
 };*/
 
-exports.deepClone = (obj, hash = new WeakMap()) => {
-	let result;
-	// Do not try to clone primitives or functions
-	if (Object(obj) !== obj || obj instanceof Function) return obj;
-	if (hash.has(obj)) return hash.get(obj); // Cyclic reference
-	try { // Try to run constructor (without arguments, as we don't know them)
-		result = new obj.constructor();
-	} catch (e) { // Constructor failed, create object without running the constructor
-		result = Object.create(Object.getPrototypeOf(obj));
-	}
-	// Optional: support for some standard constructors (extend as desired)
-	if (obj instanceof Map)
-		Array.from(obj, ([key, val]) => result.set(exports.deepClone(key, hash),
-			exports.deepClone(val, hash)));
-	else if (obj instanceof Set)
-		Array.from(obj, (key) => result.add(exports.deepClone(key, hash)));
-	// Register in hash
-	hash.set(obj, result);
-	// Clone and assign enumerable own properties recursively
-	return Object.assign(result, ...Object.keys(obj).map(
-		key => ({ [key]: exports.deepClone(obj[key], hash) })));
-};
-
 exports.averageArray = arr => {
 	if (!arr.length) return 0;
 	var sum = arr.reduce((a, b) => { return a + b; });
@@ -112,11 +89,6 @@ exports.sumArray = arr => {
 	if (!arr.length) return 0;
 	var sum = arr.reduce((a, b) => { return a + b; });
 	return sum;
-};
-
-
-exports.signedSqrt = x => {
-	return Math.sign(x) * Math.sqrt(Math.abs(x));
 };
 
 exports.getJackpot = x => {
