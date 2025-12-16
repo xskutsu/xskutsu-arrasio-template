@@ -4,7 +4,7 @@
 	"description": "A fanmade sequel to diep.io",
 	"main": "server/server.js",
 	"scripts": {
-		"start": "node dist/server/bundle.js",
+		"start": "node dist/server-bundle.js",
 		"build": "node scripts/esbuild.cjs",
 		"check:server": "tsc -p src/server/tsconfig.json --noEmit",
 		"check:client": "tsc -p src/client/tsconfig.json --noEmit",

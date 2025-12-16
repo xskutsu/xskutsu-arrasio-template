@@ -24,7 +24,7 @@ async function build(config) {
 		entryPoints: ["./src/client/src/index.js"],
 		sourcesContent: false,
 		format: "iife",
-		outfile: "dist/client/bundle.js",
+		outfile: "public/js/client-bundle.js",
 		platform: "browser",
 		minify: true,
 		tsconfig: "./src/client/tsconfig.json"
@@ -32,8 +32,8 @@ async function build(config) {
 	const serverContext = await build({
 		entryPoints: ["./src/server/src/index.js"],
 		sourcesContent: false,
-		format: "esm",
-		outfile: "dist/server/bundle.js",
+		format: "cjs",
+		outfile: "dist/server-bundle.js",
 		platform: "node",
 		packages: "external",
 		tsconfig: "./src/server/tsconfig.json"

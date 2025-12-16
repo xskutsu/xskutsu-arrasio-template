@@ -1,2 +1,4 @@
 node_modules/
 dist/
+public/js/client-bundle.js
+public/js/client-bundle.js.map

@@ -2,7 +2,9 @@ const fs = require("fs");
 const path = require("path");
 const projectRoot = path.resolve(__dirname, "..");
 const pathsToDelete = [
-	"dist/"
+	"dist/",
+	"public/js/client-bundle.js",
+	"public/js/client-bundle.js.map"
 ];
 console.log("Starting cleaning...");
 for (let p of pathsToDelete) {

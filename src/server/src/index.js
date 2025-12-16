@@ -2980,8 +2980,13 @@ var express = require('express'),
 	})();
 
 // Give the client upon request
-exportDefintionsToClient(__dirname + './dist/mockups.json');
-if (c.servesStatic) app.use(express.static(__dirname + '/../client'));
+exportDefintionsToClient(__dirname + "/mockups.json");
+if (c.servesStatic) {
+	app.use(express.static(__dirname + '/../public'));
+	app.get("/json/mockups.json", function (request, response) {
+		response.sendFile(__dirname + "/mockups.json");
+	})
+}
 
 // Websocket behavior
 const sockets = (() => {
