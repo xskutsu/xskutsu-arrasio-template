@@ -9,6 +9,8 @@
 // Import game settings.
 const c = require('./config.json');
 
+const { Vector } = require("./core/Vector");
+
 // Import utilities.
 const util = require('./lib/util');
 const ran = require('./lib/random');
@@ -323,30 +325,6 @@ room.gaussType = (type, clustering) => {
 	return location;
 };
 util.log(room.width + ' x ' + room.height + ' room initalized.  Max food: ' + room.maxFood + ', max nest food: ' + (room.maxFood * room.nestFoodAmount) + '.');
-
-// Define a vector
-class Vector {
-	constructor(x, y) { //Vector constructor.
-		this.x = x;
-		this.y = y;
-	}
-
-	update() {
-		this.len = this.length;
-		this.dir = this.direction;
-	}
-
-	get length() {
-		return Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2));
-	}
-
-	get direction() {
-		return Math.atan2(this.y, this.x);
-	}
-}
-function nullVector(v) {
-	v.x = 0; v.y = 0; //this guy's useful
-}
 
 // Get class definitions and index them
 var Class = (() => {
@@ -2355,7 +2333,7 @@ class Entity {
 				this.bond.velocity.x += bound.size * this.accel.x;
 				this.bond.velocity.y += bound.size * this.accel.y;
 				this.firingArc = [ref.facing + bound.angle, bound.arc / 2];
-				nullVector(this.accel);
+				this.accel.zero()
 				this.blend = ref.blend;
 				break;
 		}
@@ -2428,13 +2406,14 @@ class Entity {
 			util.error(this.collisionArray);
 			util.error(this.label);
 			util.error(this);
-			nullVector(this.accel); nullVector(this.velocity);
+			this.accel.zero();
+			this.velocity.zero();
 		}
 		// Apply acceleration
 		this.velocity.x += this.accel.x;
 		this.velocity.y += this.accel.y;
 		// Reset acceleration
-		nullVector(this.accel);
+		this.accel.zero();
 		// Apply motion
 		this.stepRemaining = 1;
 		this.x += this.stepRemaining * this.velocity.x / roomSpeed;
@@ -2459,7 +2438,8 @@ class Entity {
 			util.error(this.collisionArray);
 			util.error(this.label);
 			util.error(this);
-			nullVector(this.accel); nullVector(this.velocity);
+			this.accel.zero();
+			this.velocity.zero();
 			return 0;
 		}
 		if (!this.settings.canGoOutsideRoom) {
