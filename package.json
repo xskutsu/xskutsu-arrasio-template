@@ -10,6 +10,7 @@
 		"check:client": "tsc -p src/client/tsconfig.json --noEmit",
 		"check": "pnpm run check:server && pnpm run check:client",
 		"clean": "node scripts/clean.cjs",
+		"dev": "node scripts/esbuild.cjs --run --watch",
 		"watch": "node scripts/esbuild.cjs --watch"
 	},
 	"author": "Marisa Smith",
