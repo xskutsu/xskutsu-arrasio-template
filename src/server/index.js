@@ -4,11 +4,19 @@
 /*jshint esversion: 6 */
 "use strict";
 
+const serverStartTime = Date.now();
+
 // General requires
+const { Vector } = require("./core/Vector");
+const { Logger } = require("./utils/Logger");
+const { getDistance, angleDifference, loopSmooth, clamp } = require("./utils/Math");
+
+Logger.info("this is an info message.");
+Logger.warn("this is a warning message.");
+Logger.error("this is an error message.");
 
 // Import game settings.
 const Config = require("./config").default;
-const { Vector } = require("./core/Vector");
 
 // Import utilities.
 const util = require('./lib/util');
@@ -323,7 +331,7 @@ room.gaussType = (type, clustering) => {
 	} while (!room.isIn(type, location));
 	return location;
 };
-util.log(room.width + ' x ' + room.height + ' room initalized.  Max food: ' + room.maxFood + ', max nest food: ' + (room.maxFood * room.nestFoodAmount) + '.');
+Logger.info(room.width + ' x ' + room.height + ' room initalized.  Max food: ' + room.maxFood + ', max nest food: ' + (room.maxFood * room.nestFoodAmount) + '.');
 
 // Get class definitions and index them
 var Class = (() => {
@@ -487,7 +495,7 @@ class io_boomerang extends IO {
 		this.b = b;
 		this.m = b.master;
 		this.turnover = false;
-		let len = 10 * util.getDistance({ x: 0, y: 0 }, b.master.control.target);
+		let len = 10 * getDistance({ x: 0, y: 0 }, b.master.control.target);
 		this.myGoal = {
 			x: 3 * b.master.control.target.x + b.master.x,
 			y: 3 * b.master.control.target.y + b.master.y,
@@ -525,7 +533,7 @@ class io_goToMasterTarget extends IO {
 
 	think() {
 		if (this.countdown) {
-			if (util.getDistance(this.body, this.myGoal) < 1) { this.countdown--; }
+			if (getDistance(this.body, this.myGoal) < 1) { this.countdown--; }
 			return {
 				goal: {
 					x: this.myGoal.x,
@@ -595,7 +603,7 @@ class io_onlyAcceptInArc extends IO {
 
 	think(input) {
 		if (input.target && this.body.firingArc != null) {
-			if (Math.abs(util.angleDifference(Math.atan2(input.target.y, input.target.x), this.body.firingArc[0])) >= this.body.firingArc[1]) {
+			if (Math.abs(angleDifference(Math.atan2(input.target.y, input.target.x), this.body.firingArc[0])) >= this.body.firingArc[1]) {
 				return {
 					fire: false,
 					alt: false,
@@ -648,7 +656,7 @@ class io_nearestDifferentMaster extends IO {
 			if (Math.pow(this.body.x - e.x, 2) + Math.pow(this.body.y - e.y, 2) < sqrRange) {
 				if (this.body.firingArc == null || this.body.aiSettings.view360) {
 					yaboi = true;
-				} else if (Math.abs(util.angleDifference(util.getDirection(this.body, e), this.body.firingArc[0])) < this.body.firingArc[1]) yaboi = true;
+				} else if (Math.abs(angleDifference(Math.atan2(e.y - this.body.y, e.x - this.body.x), this.body.firingArc[0])) < this.body.firingArc[1]) yaboi = true;
 			}
 			if (yaboi) {
 				mostDangerous = Math.max(e.dangerValue, mostDangerous);
@@ -854,7 +862,7 @@ class io_hangOutNearMaster extends IO {
 		if (this.body.source != this.body) {
 			let bound1 = this.orbit * 0.8 + this.body.source.size + this.body.size;
 			let bound2 = this.orbit * 1.5 + this.body.source.size + this.body.size;
-			let dist = util.getDistance(this.body, this.body.source) + Math.PI / 8;
+			let dist = getDistance(this.body, this.body.source) + Math.PI / 8;
 			let output = {
 				target: {
 					x: this.body.velocity.x,
@@ -866,8 +874,7 @@ class io_hangOutNearMaster extends IO {
 			// Set a goal
 			if (dist > bound2 || this.timer > 30) {
 				this.timer = 0;
-
-				let dir = util.getDirection(this.body, this.body.source) + Math.PI * ran.random(0.5);
+				let dir = Math.atan2(this.body.source.y - this.body.y, this.body.source.x - this.body.x) + Math.PI * ran.random(0.5);
 				let len = ran.randomRange(bound1, bound2);
 				let x = this.body.source.x - len * Math.cos(dir);
 				let y = this.body.source.y - len * Math.sin(dir);
@@ -965,7 +972,7 @@ class io_dontTurn extends IO {
 class io_fleeAtLowHealth extends IO {
 	constructor(b) {
 		super(b);
-		this.fear = util.clamp(ran.gauss(0.7, 0.15), 0.1, 0.9);
+		this.fear = clamp(ran.gauss(0.7, 0.15), 0.1, 0.9);
 	}
 
 	think(input) {
@@ -1415,7 +1422,7 @@ class Gun {
 
 	fire(gx, gy, sk) {
 		// Recoil
-		this.lastShot.time = util.time();
+		this.lastShot.time = performance.now();
 		this.lastShot.power = 3 * Math.log(Math.sqrt(sk.spd) + this.trueRecoil + 1) + 1;
 		this.motion += this.lastShot.power;
 		// Find inaccuracy
@@ -1688,7 +1695,7 @@ class HealthType {
 				this.amount += cons * (this.max / 10 / 60 / 2.5 + boost);
 				break;
 			case 'dynamic':
-				let r = util.clamp(this.amount / this.max, 0, 1);
+				let r = clamp(this.amount / this.max, 0, 1);
 				if (!r) {
 					this.amount = 0.0001;
 				}
@@ -1699,18 +1706,18 @@ class HealthType {
 				}
 				break;
 		}
-		this.amount = util.clamp(this.amount, 0, this.max);
+		this.amount = clamp(this.amount, 0, this.max);
 	}
 
 	get permeability() {
 		switch (this.type) {
 			case 'static': return 1;
-			case 'dynamic': return (this.max) ? util.clamp(this.amount / this.max, 0, 1) : 0;
+			case 'dynamic': return (this.max) ? clamp(this.amount / this.max, 0, 1) : 0;
 		}
 	}
 
 	get ratio() {
-		return (this.max) ? util.clamp(1 - Math.pow(this.amount / this.max - 1, 4), 0, 1) : 0;
+		return (this.max) ? clamp(1 - Math.pow(this.amount / this.max - 1, 4), 0, 1) : 0;
 	}
 }
 
@@ -2249,7 +2256,7 @@ class Entity {
 	damageMultiplier() {
 		switch (this.type) {
 			case 'swarm':
-				return 0.25 + 1.5 * util.clamp(this.range / (this.RANGE + 1), 0, 1);
+				return 0.25 + 1.5 * clamp(this.range / (this.RANGE + 1), 0, 1);
 			default: return 1;
 		}
 	}
@@ -2285,7 +2292,7 @@ class Entity {
 				break;
 			case 'swarm':
 				this.maxSpeed = this.topSpeed;
-				let l = util.getDistance({ x: 0, y: 0, }, g) + 1;
+				let l = getDistance({ x: 0, y: 0, }, g) + 1;
 				if (gactive && l > this.size) {
 					let desiredxspeed = this.topSpeed * g.x / l,
 						desiredyspeed = this.topSpeed * g.y / l,
@@ -2305,7 +2312,7 @@ class Entity {
 				break;
 			case 'chase':
 				if (gactive) {
-					let l = util.getDistance({ x: 0, y: 0, }, g);
+					let l = getDistance({ x: 0, y: 0, }, g);
 					if (l > this.size * 2) {
 						this.maxSpeed = this.topSpeed;
 						let desiredxspeed = this.topSpeed * g.x / l,
@@ -2359,7 +2366,7 @@ class Entity {
 				break;
 			case 'smoothWithMotion':
 			case 'looseWithMotion':
-				this.facing += util.loopSmooth(this.facing, this.velocity.direction, 4 / roomSpeed);
+				this.facing += loopSmooth(this.facing, this.velocity.direction, 4 / roomSpeed);
 				break;
 			case 'withTarget':
 			case 'toTarget':
@@ -2371,20 +2378,20 @@ class Entity {
 			case 'looseWithTarget':
 			case 'looseToTarget':
 			case 'smoothToTarget':
-				this.facing += util.loopSmooth(this.facing, Math.atan2(t.y, t.x), 4 / roomSpeed);
+				this.facing += loopSmooth(this.facing, Math.atan2(t.y, t.x), 4 / roomSpeed);
 				break;
 			case 'bound':
 				let givenangle;
 				if (this.control.main) {
 					givenangle = Math.atan2(t.y, t.x);
-					let diff = util.angleDifference(givenangle, this.firingArc[0]);
+					let diff = angleDifference(givenangle, this.firingArc[0]);
 					if (Math.abs(diff) >= this.firingArc[1]) {
-						givenangle = this.firingArc[0];// - util.clamp(Math.sign(diff), -this.firingArc[1], this.firingArc[1]);
+						givenangle = this.firingArc[0];// - clamp(Math.sign(diff), -this.firingArc[1], this.firingArc[1]);
 					}
 				} else {
 					givenangle = this.firingArc[0];
 				}
-				this.facing += util.loopSmooth(this.facing, givenangle, 4 / roomSpeed);
+				this.facing += loopSmooth(this.facing, givenangle, 4 / roomSpeed);
 				break;
 		}
 		// Loop
@@ -2394,7 +2401,7 @@ class Entity {
 		while (this.facing > 2 * Math.PI) {
 			this.facing -= 2 * Math.PI;
 		}
-		this.vfacing = util.angleDifference(oldFacing, this.facing) * roomSpeed;
+		this.vfacing = angleDifference(oldFacing, this.facing) * roomSpeed;
 	}
 
 	takeSelfie() {
@@ -2404,10 +2411,10 @@ class Entity {
 
 	physics() {
 		if (this.accel.x == null || this.velocity.x == null) {
-			util.error('Void Error!');
-			util.error(this.collisionArray);
-			util.error(this.label);
-			util.error(this);
+			Logger.error('Void Error!');
+			Logger.error(this.collisionArray);
+			Logger.error(this.label);
+			Logger.error(this);
 			this.accel.zero();
 			this.velocity.zero();
 		}
@@ -2436,10 +2443,10 @@ class Entity {
 
 	confinementToTheseEarthlyShackles() {
 		if (this.x == null || this.x == null) {
-			util.error('Void Error!');
-			util.error(this.collisionArray);
-			util.error(this.label);
-			util.error(this);
+			Logger.error('Void Error!');
+			Logger.error(this.collisionArray);
+			Logger.error(this.label);
+			Logger.error(this);
 			this.accel.zero();
 			this.velocity.zero();
 			return 0;
@@ -2637,10 +2644,10 @@ var logs = (() => {
 	let logger = (() => {
 		// The two basic functions
 		function set(obj) {
-			obj.time = util.time();
+			obj.time = performance.now();
 		}
 		function mark(obj) {
-			obj.data.push(util.time() - obj.time);
+			obj.data.push(performance.now() - obj.time);
 		}
 		function record(obj) {
 			let o = util.averageArray(obj.data);
@@ -2664,7 +2671,7 @@ var logs = (() => {
 		return () => {
 			let internal = {
 				data: [],
-				time: util.time(),
+				time: performance.now(),
 				count: 0,
 			};
 			// Return the new logger
@@ -2874,7 +2881,7 @@ var express = require('express'),
 				let r2 = Math.sqrt(Math.pow(x - x2, 2) + Math.pow(y - y2, 2));
 				let r3 = Math.sqrt(Math.pow(x - x3, 2) + Math.pow(y - y3, 2));
 				if (r != r2 || r != r3) {
-					//util.log('somethings fucky');
+					//Logger.info('somethings fucky');
 				}
 				return { x: x, y: y, radius: r };
 			}
@@ -2943,9 +2950,9 @@ var express = require('express'),
 				// Kill the reference entities.
 				temptank.destroy();
 			} catch (error) {
-				util.error(error);
-				util.error(k);
-				util.error(Class[k]);
+				Logger.error(error);
+				Logger.error(k);
+				Logger.error(Class[k]);
 			}
 		}
 		// Remove them
@@ -2953,11 +2960,11 @@ var express = require('express'),
 		// Build the function to return
 		let writeData = JSON.stringify(mockupData);
 		return loc => {
-			util.log('Preparing definition export.');
+			Logger.info('Preparing definition export.');
 			fs.writeFileSync(loc, writeData, 'utf8', (err) => {
-				if (err) return util.error(err);
+				if (err) return Logger.error(err);
 			});
-			util.log('Mockups written to ' + loc + '!');
+			Logger.info('Mockups written to ' + loc + '!');
 		};
 	})();
 
@@ -2991,13 +2998,13 @@ const sockets = (() => {
 				// Free the IP
 				let n = connectedIPs.findIndex(w => { return w.ip === socket.ip; });
 				if (n !== -1) {
-					util.log(socket.ip + " disconnected.");
+					Logger.info(socket.ip + " disconnected.");
 					util.remove(connectedIPs, n);
 				}
 				// Free the token
 				if (socket.key != '' && Config.TOKEN_REQUIRED) {
 					keys.push(socket.key);
-					util.log("Token freed.");
+					Logger.info("Token freed.");
 				}
 				// Figure out who the player was
 				let player = socket.player,
@@ -3012,16 +3019,16 @@ const sockets = (() => {
 						}, 10000);
 					}
 					// Disconnect everything
-					util.log('[INFO] User ' + player.name + ' disconnected!');
+					Logger.info('[INFO] User ' + player.name + ' disconnected!');
 					util.remove(players, index);
 				} else {
-					util.log('[INFO] A player disconnected before entering the game.');
+					Logger.info('[INFO] A player disconnected before entering the game.');
 				}
 				// Free the view
 				util.remove(views, views.indexOf(socket.view));
 				// Remove the socket
 				util.remove(clients, clients.indexOf(socket));
-				util.log('[INFO] Socket closed. Views: ' + views.length + '. Clients: ' + clients.length + '.');
+				Logger.info('[INFO] Socket closed. Views: ' + views.length + '. Clients: ' + clients.length + '.');
 			}
 			// Banning
 			function ban(socket) {
@@ -3029,17 +3036,17 @@ const sockets = (() => {
 					bannedIPs.push(socket.ip);
 				} // No need for duplicates
 				socket.terminate();
-				util.warn(socket.ip + ' banned!');
+				Logger.warn(socket.ip + ' banned!');
 			}
 			// Being kicked
 			function kick(socket, reason = 'No reason given.') {
 				let n = suspiciousIPs.findIndex(n => { return n.ip === socket.ip; });
 				if (n === -1) {
 					suspiciousIPs.push({ ip: socket.ip, warns: 1, });
-					util.warn(reason + ' Kicking. 1 warning.');
+					Logger.warn(reason + ' Kicking. 1 warning.');
 				} else {
 					suspiciousIPs[n].warns++;
-					util.warn(reason + ' Kicking. ' + suspiciousIPs[n].warns + ' warnings.');
+					Logger.warn(reason + ' Kicking. ' + suspiciousIPs[n].warns + ' warnings.');
 					if (suspiciousIPs[n].warns >= Config.socketWarningLimit) {
 						ban(socket);
 					}
@@ -3077,11 +3084,11 @@ const sockets = (() => {
 							socket.verified = true;
 							// Proceed
 							socket.talk('w', true);
-							util.log('[INFO] A socket was verified with the token: '); util.log(key);
-							util.log('Clients: ' + clients.length);
+							Logger.info('[INFO] A socket was verified with the token: '); Logger.info(key);
+							Logger.info('Clients: ' + clients.length);
 						} else {
 							// If not, kick 'em (nicely)
-							util.log('[INFO] Invalid player verification attempt.');
+							Logger.info('[INFO] Invalid player verification attempt.');
 							socket.lastWords('w', false);
 						}
 					} break;
@@ -3109,14 +3116,14 @@ const sockets = (() => {
 								room.width,
 								room.height,
 								JSON.stringify(Config.ROOM_SETUP),
-								JSON.stringify(util.serverStartTime),
+								JSON.stringify(serverStartTime),
 								roomSpeed
 							);
 						}
 						// Start the update rhythm immediately
 						socket.update(0);
 						// Log it
-						util.log('[INFO] ' + (m[0]) + (needsRoom ? ' joined' : ' rejoined') + ' the game! Players: ' + players.length);
+						Logger.info('[INFO] ' + (m[0]) + (needsRoom ? ' joined' : ' rejoined') + ' the game! Players: ' + players.length);
 					} break;
 					case 'S': { // clock syncing
 						if (m.length !== 1) { socket.kick('Ill-sized sync packet.'); return 1; }
@@ -3125,7 +3132,7 @@ const sockets = (() => {
 						// Verify it
 						if (typeof synctick !== 'number') { socket.kick('Weird sync packet.'); return 1; }
 						// Bounce it back
-						socket.talk('S', synctick, util.time());
+						socket.talk('S', synctick, performance.now());
 					} break;
 					case 'p': { // ping
 						if (m.length !== 1) { socket.kick('Ill-sized ping.'); return 1; }
@@ -3135,7 +3142,7 @@ const sockets = (() => {
 						if (typeof ping !== 'number') { socket.kick('Weird ping.'); return 1; }
 						// Pong
 						socket.talk('p', m[0]); // Just pong it right back
-						socket.status.lastHeartbeat = util.time();
+						socket.status.lastHeartbeat = performance.now();
 					} break;
 					case 'd': { // downlink
 						if (m.length !== 1) { socket.kick('Ill-sized downlink.'); return 1; }
@@ -3145,11 +3152,11 @@ const sockets = (() => {
 						if (typeof time !== 'number') { socket.kick('Bad downlink.'); return 1; }
 						// The downlink indicates that the client has received an update and is now ready to receive more.
 						socket.status.receiving = 0;
-						socket.camera.ping = util.time() - time;
-						socket.camera.lastDowndate = util.time();
+						socket.camera.ping = performance.now() - time;
+						socket.camera.lastDowndate = performance.now();
 						// Schedule a new update cycle
 						// Either fires immediately or however much longer it's supposed to wait per the config.
-						socket.update(Math.max(0, (1000 / Config.networkUpdateFactor) - (util.time() - socket.camera.lastUpdate)));
+						socket.update(Math.max(0, (1000 / Config.networkUpdateFactor) - (performance.now() - socket.camera.lastUpdate)));
 					} break;
 					case 'C': { // command packet
 						if (m.length !== 3) { socket.kick('Ill-sized command packet.'); return 1; }
@@ -3273,7 +3280,7 @@ const sockets = (() => {
 				// This function will be called in the slow loop
 				return () => {
 					// Kick if it's d/c'd
-					if (util.time() - socket.status.lastHeartbeat > Config.maxHeartbeatInterval) {
+					if (performance.now() - socket.status.lastHeartbeat > Config.maxHeartbeatInterval) {
 						socket.kick('Heartbeat lost.'); return 0;
 					}
 					// Add a strike if there's more than 50 requests in a second
@@ -3324,7 +3331,7 @@ const sockets = (() => {
 											}
 										} // jshint ignore:line
 										default:
-											util.error(newValue);
+											Logger.error(newValue);
 											throw new Error('Unsupported type for a floppyvar!');
 									}
 								}
@@ -3573,11 +3580,11 @@ const sockets = (() => {
 					};
 					// Set up the recording commands
 					player.records = (() => {
-						let begin = util.time();
+						let begin = performance.now();
 						return () => {
 							return [
 								player.body.skill.score,
-								Math.floor((util.time() - begin) / 1000),
+								Math.floor((performance.now() - begin) / 1000),
 								player.body.killCount.solo,
 								player.body.killCount.assists,
 								player.body.killCount.bosses,
@@ -3704,7 +3711,7 @@ const sockets = (() => {
 							// If nothing has changed since the last update, wait (approximately) until then to update
 							let rightNow = room.lastCycle;
 							if (rightNow === camera.lastUpdate) {
-								socket.update(5 + room.cycleSpeed - util.time() + rightNow);
+								socket.update(5 + room.cycleSpeed - performance.now() + rightNow);
 								return 1;
 							}
 							// ...elseeeeee...
@@ -3784,7 +3791,7 @@ const sockets = (() => {
 								numberInView,
 								...view
 							);
-							// Queue up some for the front util.log if needed
+							// Queue up some for the front (...) if needed
 							if (socket.status.receiving < Config.networkFrontlog) {
 								socket.update(Math.max(
 									0,
@@ -3837,8 +3844,8 @@ const sockets = (() => {
 									// Round all the old data
 									data = data.map(d => {
 										return [
-											Math.round(255 * util.clamp(d[0] / room.width, 0, 1)),
-											Math.round(255 * util.clamp(d[1] / room.height, 0, 1)),
+											Math.round(255 * clamp(d[0] / room.width, 0, 1)),
+											Math.round(255 * clamp(d[1] / room.height, 0, 1)),
 											d[2]
 										];
 									});
@@ -4114,7 +4121,7 @@ const sockets = (() => {
 					readlb = getleaderboard();
 					logs.minimap.mark();
 					// Check sockets
-					let time = util.time();
+					let time = performance.now();
 					clients.forEach(socket => {
 						if (socket.timeout.check(time)) socket.kick('Kicked for inactivity.');
 						if (time - socket.statuslastHeartbeat > Config.maxHeartbeatInterval) socket.kick('Lost heartbeat.');
@@ -4155,7 +4162,7 @@ const sockets = (() => {
 						if (n !== -1) {
 							// Don't allow more than 2
 							if (connectedIPs[n].number > 1) {
-								util.warn('Too many connections from the same IP. [' + socket.ip + ']');
+								Logger.warn('Too many connections from the same IP. [' + socket.ip + ']');
 								socket.terminate();
 								return 1;
 							} else connectedIPs[n].number++;
@@ -4163,13 +4170,13 @@ const sockets = (() => {
 					}
 				} else {
 					// Don't let banned IPs connect.
-					util.warn(req.connection.remoteAddress);
-					util.warn(req.headers['x-forwarded-for']);
+					Logger.warn(req.connection.remoteAddress);
+					Logger.warn(req.headers['x-forwarded-for']);
 					socket.terminate();
-					util.warn('Inappropiate connection request: header spoofing. Socket terminated.');
+					Logger.warn('Inappropiate connection request: header spoofing. Socket terminated.');
 					return 1;
 				}
-				util.log(socket.ip + ' is trying to connect...');
+				Logger.info(socket.ip + ' is trying to connect...');
 				// Set it up
 				socket.binaryType = 'arraybuffer';
 				socket.key = '';
@@ -4178,7 +4185,7 @@ const sockets = (() => {
 					let mem = 0;
 					let timer = 0;
 					return {
-						set: val => { if (mem !== val) { mem = val; timer = util.time(); } },
+						set: val => { if (mem !== val) { mem = val; timer = performance.now(); } },
 						check: time => { return timer && time - timer > Config.maxHeartbeatInterval; },
 					};
 				})();
@@ -4191,7 +4198,7 @@ const sockets = (() => {
 					hasSpawned: false,
 					needsFullMap: true,
 					needsFullLeaderboard: true,
-					lastHeartbeat: util.time(),
+					lastHeartbeat: performance.now(),
 				};
 				// Set up loops
 				socket.loops = (() => {
@@ -4219,7 +4226,7 @@ const sockets = (() => {
 					y: undefined,
 					vx: 0,
 					vy: 0,
-					lastUpdate: util.time(),
+					lastUpdate: performance.now(),
 					lastDowndate: undefined,
 					fov: 2000,
 				};
@@ -4241,7 +4248,7 @@ const sockets = (() => {
 				};
 				socket.on('message', message => incoming(message, socket));
 				socket.on('close', () => { socket.loops.terminate(); close(socket); });
-				socket.on('error', e => { util.log('[ERROR]:'); util.error(e); });
+				socket.on('error', e => { Logger.info('[ERROR]:'); Logger.error(e); });
 				// Put the player functions in the socket
 				socket.spawn = name => { return spawn(socket, name); };
 				// And make an update
@@ -4251,7 +4258,7 @@ const sockets = (() => {
 				};
 				// Log it
 				clients.push(socket);
-				util.log('[INFO] New socket opened with ', socket.ip);
+				Logger.info('[INFO] New socket opened with ', socket.ip);
 			};
 		})(),
 	};
@@ -4264,7 +4271,7 @@ var gameloop = (() => {
 	// Collision stuff
 	let collide = (() => {
 		function simplecollide(my, n) {
-			let diff = (1 + util.getDistance(my, n) / 2) * roomSpeed;
+			let diff = (1 + getDistance(my, n) / 2) * roomSpeed;
 			let a = (my.intangibility) ? 1 : my.pushability,
 				b = (n.intangibility) ? 1 : n.pushability,
 				c = 0.05 * (my.x - n.x) / diff,
@@ -4277,7 +4284,7 @@ var gameloop = (() => {
 		function firmcollide(my, n, buffer = 0) {
 			let item1 = { x: my.x + my.m_x, y: my.y + my.m_y, };
 			let item2 = { x: n.x + n.m_x, y: n.y + n.m_y, };
-			let dist = util.getDistance(item1, item2);
+			let dist = getDistance(item1, item2);
 			let s1 = Math.max(my.velocity.length, my.topSpeed);
 			let s2 = Math.max(n.velocity.length, n.topSpeed);
 			let strike1, strike2;
@@ -4300,7 +4307,7 @@ var gameloop = (() => {
 				} else { strike2 = true; }
 				item1 = { x: my.x + my.m_x, y: my.y + my.m_y, };
 				item2 = { x: n.x + n.m_x, y: n.y + n.m_y, };
-				dist = util.getDistance(item1, item2);
+				dist = getDistance(item1, item2);
 			}
 		}
 		function reflectcollide(wall, bounce) {
@@ -4397,8 +4404,8 @@ var gameloop = (() => {
 							0.001
 						),
 						depth = {
-							_me: util.clamp((combinedRadius - diff.length) / (2 * my.size), 0, 1), //1: I am totally within it
-							_n: util.clamp((combinedRadius - diff.length) / (2 * n.size), 0, 1), //1: It is totally within me
+							_me: clamp((combinedRadius - diff.length) / (2 * my.size), 0, 1), //1: I am totally within it
+							_n: clamp((combinedRadius - diff.length) / (2 * n.size), 0, 1), //1: It is totally within me
 						},
 						combinedDepth = {
 							up: depth._me * depth._n,
@@ -4544,29 +4551,29 @@ var gameloop = (() => {
 				other = collision[1];
 			// Check for ghosts...
 			if (other.isGhost) {
-				util.error('GHOST FOUND');
-				util.error(other.label);
-				util.error('x: ' + other.x + ' y: ' + other.y);
-				util.error(other.collisionArray);
-				util.error('health: ' + other.health.amount);
-				util.warn('Ghost removed.');
+				Logger.error('GHOST FOUND');
+				Logger.error(other.label);
+				Logger.error('x: ' + other.x + ' y: ' + other.y);
+				Logger.error(other.collisionArray);
+				Logger.error('health: ' + other.health.amount);
+				Logger.warn('Ghost removed.');
 				if (grid.checkIfInHSHG(other)) {
-					util.warn('Ghost removed.'); grid.removeObject(other);
+					Logger.warn('Ghost removed.'); grid.removeObject(other);
 				}
 				return 0;
 			}
 			if (instance.isGhost) {
-				util.error('GHOST FOUND');
-				util.error(instance.label);
-				util.error('x: ' + instance.x + ' y: ' + instance.y);
-				util.error(instance.collisionArray);
-				util.error('health: ' + instance.health.amount);
+				Logger.error('GHOST FOUND');
+				Logger.error(instance.label);
+				Logger.error('x: ' + instance.x + ' y: ' + instance.y);
+				Logger.error(instance.collisionArray);
+				Logger.error('health: ' + instance.health.amount);
 				if (grid.checkIfInHSHG(instance)) {
-					util.warn('Ghost removed.'); grid.removeObject(instance);
+					Logger.warn('Ghost removed.'); grid.removeObject(instance);
 				}
 				return 0;
 			}
-			if (!instance.activation.check() && !other.activation.check()) { util.warn('Tried to collide with an inactive instance.'); return 0; }
+			if (!instance.activation.check() && !other.activation.check()) { Logger.warn('Tried to collide with an inactive instance.'); return 0; }
 			// Handle walls
 			if (instance.type === 'wall' || other.type === 'wall') {
 				let a = (instance.type === 'bullet' || other.type === 'bullet') ?
@@ -4657,7 +4664,7 @@ var gameloop = (() => {
 		logs.master.mark();
 		// Remove dead entities
 		purgeEntities();
-		room.lastCycle = util.time();
+		room.lastCycle = performance.now();
 	};
 	//let expected = 1000 / c.gameSpeed / 30;
 	//let alphaFactor = (delta > expected) ? expected / delta : 1;
@@ -4674,7 +4681,7 @@ var maintainloop = (() => {
 			do {
 				position = room.randomType(type);
 				x++;
-				if (x > 200) { util.warn("Could not place some roids."); return 0; }
+				if (x > 200) { Logger.warn("Could not place some roids."); return 0; }
 			} while (dirtyCheck(position, 10 + entityClass.SIZE));
 			let o = new Entity(position);
 			o.define(entityClass);
@@ -4691,7 +4698,7 @@ var maintainloop = (() => {
 		for (let i = Math.ceil(roidcount * 0.3); i; i--) { count++; placeRoid('roid', Class.babyObstacle); }
 		for (let i = Math.ceil(rockcount * 0.8); i; i--) { count++; placeRoid('rock', Class.obstacle); }
 		for (let i = Math.ceil(rockcount * 0.5); i; i--) { count++; placeRoid('rock', Class.babyObstacle); }
-		util.log('Placing ' + count + ' obstacles!');
+		Logger.info('Placing ' + count + ' obstacles!');
 	}
 	placeRoids();
 	// Spawning functions
@@ -4739,13 +4746,13 @@ var maintainloop = (() => {
 					}
 					// Wrap things up.
 					setTimeout(() => sockets.broadcast(arrival), 5000);
-					util.log('[SPAWN] ' + arrival);
+					Logger.info('[SPAWN] ' + arrival);
 				},
 			};
 		})();
 		return census => {
 			if (timer > 6000 && ran.dice(16000 - timer)) {
-				util.log('[SPAWN] Preparing to spawn...');
+				Logger.info('[SPAWN] Preparing to spawn...');
 				timer = 0;
 				let choice = [];
 				switch (ran.chooseChance(40, 1)) {
@@ -4852,7 +4859,7 @@ var maintainloop = (() => {
 			// Find the nearest food and determine if we can do anything with it
 			if (o != null) {
 				for (let i = 50; i > 0; i--) {
-					if (scatter == -1 || util.getDistance(position, o) < scatter) {
+					if (scatter == -1 || getDistance(position, o) < scatter) {
 						if (ran.dice((o.foodLevel + 1) * (o.foodLevel + 1))) {
 							mitosis = true; break;
 						} else {
@@ -4983,7 +4990,7 @@ var maintainloop = (() => {
 						else { census.sum++; census[instance.foodLevel]++; }
 						return instance;
 					}
-				} catch (err) { util.error(instance.label); util.error(err); instance.kill(); }
+				} catch (err) { Logger.error(instance.label); Logger.error(err); instance.kill(); }
 			}).filter(e => { return e; });
 			// Sum it up
 			let maxFood = 1 + room.maxFood + 15 * census.tank;
@@ -5071,18 +5078,18 @@ var speedcheckloop = (() => {
 		global.fps = (1000 / sum).toFixed(2);
 		if (sum > 1000 / roomSpeed / 30) {
 			//fails++;
-			util.warn('~~ LOOPS: ' + loops + '. ENTITY #: ' + entities.length + '//' + Math.round(active / loops) + '. VIEW #: ' + views.length + '. BACKLOGGED :: ' + (sum * roomSpeed * 3).toFixed(3) + '%! ~~');
-			util.warn('Total activation time: ' + activationtime);
-			util.warn('Total collision time: ' + collidetime);
-			util.warn('Total cycle time: ' + movetime);
-			util.warn('Total player update time: ' + playertime);
-			util.warn('Total lb+minimap processing time: ' + maptime);
-			util.warn('Total entity physics calculation time: ' + physicstime);
-			util.warn('Total entity life+thought cycle time: ' + lifetime);
-			util.warn('Total entity selfie-taking time: ' + selfietime);
-			util.warn('Total time: ' + (activationtime + collidetime + movetime + playertime + maptime + physicstime + lifetime + selfietime));
+			Logger.warn('~~ LOOPS: ' + loops + '. ENTITY #: ' + entities.length + '//' + Math.round(active / loops) + '. VIEW #: ' + views.length + '. BACKLOGGED :: ' + (sum * roomSpeed * 3).toFixed(3) + '%! ~~');
+			Logger.warn('Total activation time: ' + activationtime);
+			Logger.warn('Total collision time: ' + collidetime);
+			Logger.warn('Total cycle time: ' + movetime);
+			Logger.warn('Total player update time: ' + playertime);
+			Logger.warn('Total lb+minimap processing time: ' + maptime);
+			Logger.warn('Total entity physics calculation time: ' + physicstime);
+			Logger.warn('Total entity life+thought cycle time: ' + lifetime);
+			Logger.warn('Total entity selfie-taking time: ' + selfietime);
+			Logger.warn('Total time: ' + (activationtime + collidetime + movetime + playertime + maptime + physicstime + lifetime + selfietime));
 			if (fails > 60) {
-				util.error("FAILURE!");
+				Logger.error("FAILURE!");
 				//process.exit(1);
 			}
 		} else {
@@ -5099,11 +5106,11 @@ var websockets = (() => {
 	let config = { server: server };
 	if (Config.servesStatic) {
 		server.listen(Config.port, function httpListening() {
-			util.log((new Date()) + ". Joint HTTP+Websocket server turned on, listening on port " + server.address().port + ".");
+			Logger.info((new Date()) + ". Joint HTTP+Websocket server turned on, listening on port " + server.address().port + ".");
 		});
 	} else {
 		config.port = Config.port;
-		util.log((new Date()) + 'Websocket server turned on, listening on port ' + Config.port + '.');
+		Logger.info((new Date()) + 'Websocket server turned on, listening on port ' + Config.port + '.');
 	}
 	// Build it
 	return new WebSocket.Server(config);
@@ -5129,17 +5136,17 @@ process.on("SIGINT", () => {
 	if (!shutdownWarning) {
 		shutdownWarning = true;
 		sockets.broadcast("The server is shutting down.");
-		util.log('Server going down! Warning broadcasted.');
+		Logger.info('Server going down! Warning broadcasted.');
 		setTimeout(() => {
 			sockets.broadcast("Arena closed.");
-			util.log('Final warning broadcasted.');
+			Logger.info('Final warning broadcasted.');
 			setTimeout(() => {
-				util.warn('Process ended.');
+				Logger.warn('Process ended.');
 				process.exit();
 			}, 3000);
 		}, 17000);
 	} else {
-		util.log("Forcefully shutting down...");
+		Logger.info("Forcefully shutting down...");
 		process.exit();
 	}
 });
