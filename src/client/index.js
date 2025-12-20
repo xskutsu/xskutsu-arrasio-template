@@ -1,3 +1,5 @@
+const { addArticle } = require("../shared/utils/strings");
+
 /*global require, console*/
 /*jshint -W097*/
 /*jshint browser: true*/
@@ -121,9 +123,6 @@ var util = (function (exports = {}) {
 		weh(seconds, 'second');
 		if (y === '') { y = 'less than a second'; }
 		return y;
-	};
-	exports.addArticle = string => {
-		return (/[aeiouAEIOU]/.test(string[0])) ? 'an ' + string : 'a ' + string;
 	};
 	exports.formatLargeNumber = x => {
 		return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
