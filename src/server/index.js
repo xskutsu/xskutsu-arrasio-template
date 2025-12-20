@@ -2973,7 +2973,7 @@ if (c.servesStatic) {
 
 // Websocket behavior
 const sockets = (() => {
-	const protocol = require('../../shared/fasttalk');
+	const protocol = require('../shared/fasttalk');
 	let clients = [], players = [], bannedIPs = [], suspiciousIPs = [], connectedIPs = [],
 		bannedNames = [
 			'FREE_FOOD_LUCARIO',

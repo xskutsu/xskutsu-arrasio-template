@@ -1204,7 +1204,7 @@ var moveCompensation = (() => {
 const socketInit = (() => {
 	// Inital setup stuff
 	window.WebSocket = window.WebSocket || window.MozWebSocket;
-	const protocol = require("../../shared/fasttalk");
+	const protocol = require("../shared/fasttalk");
 	// This is what we use to figure out what the hell the server is telling us to look at
 	const convert = (() => {
 		// Make a data crawler

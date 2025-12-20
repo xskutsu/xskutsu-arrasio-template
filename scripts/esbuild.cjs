@@ -23,7 +23,7 @@ async function build(config) {
 (async function () {
 	console.log("Starting building...");
 	const clientContext = await build({
-		entryPoints: ["./src/client/src/index.js"],
+		entryPoints: ["./src/client/index.ts"],
 		sourcesContent: false,
 		format: "iife",
 		outfile: "public/js/client-bundle.js",
@@ -36,7 +36,7 @@ async function build(config) {
 	}
 	let serverProcess;
 	const serverContext = await build({
-		entryPoints: ["./src/server/src/index.js"],
+		entryPoints: ["./src/server/index.ts"],
 		sourcesContent: false,
 		format: "cjs",
 		outfile: "dist/server-bundle.js",

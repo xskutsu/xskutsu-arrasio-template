@@ -104,11 +104,11 @@ class PacketBuilder {
 export function encode(inputArray: EncodableValue[]): Uint8Array {
 	const builder = new PacketBuilder();
 	for (const value of inputArray) {
-		if (typeof value === 'string') {
+		if (typeof value === "string") {
 			builder.writeString(value);
-		} else if (typeof value === 'boolean') {
+		} else if (typeof value === "boolean") {
 			builder.writeUint8(value ? Tag.TRUE : Tag.FALSE);
-		} else if (typeof value === 'number') {
+		} else if (typeof value === "number") {
 			if (!Number.isFinite(value)) {
 				throw new Error("Cannot encode Infinity or NaN");
 			}
@@ -214,8 +214,3 @@ export function decode(rawBuffer: ArrayBuffer | Uint8Array): EncodableValue[] {
 	}
 	return output;
 }
-
-const input = [1, false, 5.5, "HELO WORLD"];
-const packet = encode(input);
-const output = decode(packet);
-console.log(input, packet, output);
