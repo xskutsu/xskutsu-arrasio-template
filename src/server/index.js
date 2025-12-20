@@ -1468,7 +1468,7 @@ class Gun {
 			LABEL: this.master.label + ((this.label) ? ' ' + this.label : '') + ' ' + o.label,
 		});
 		o.color = this.body.master.color;
-		// Keep track of it and give it the function it needs to deutil.log itself upon death
+		// Keep track of it and give it the function it needs to remove itself upon death
 		if (this.countsOwnKids) {
 			o.parent = this;
 			this.children.push(o);
