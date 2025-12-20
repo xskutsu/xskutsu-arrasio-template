@@ -10,6 +10,7 @@ const serverStartTime = Date.now();
 const { Vector } = require("./core/Vector");
 const { Logger } = require("./utils/Logger");
 const { getDistance, angleDifference, loopSmooth, clamp } = require("./utils/Math");
+const { calculateSum, calculateAverage, removeItemAtIndex } = require("./utils/Arrays");
 
 Logger.info("this is an info message.");
 Logger.warn("this is a warning message.");
@@ -2589,14 +2590,14 @@ class Entity {
 
 	destroy() {
 		// Remove from the protected entities list
-		if (this.isProtected) util.remove(entitiesToAvoid, entitiesToAvoid.indexOf(this));
+		if (this.isProtected) removeItemAtIndex(entitiesToAvoid, entitiesToAvoid.indexOf(this));
 		// Remove from minimap
 		let i = minimap.findIndex(entry => { return entry[0] === this.id; });
-		if (i != -1) util.remove(minimap, i);
+		if (i != -1) removeItemAtIndex(minimap, i);
 		// Remove this from views
 		views.forEach(v => v.remove(this));
 		// Remove from parent lists if needed
-		if (this.parent != null) util.remove(this.parent.children, this.parent.children.indexOf(this));
+		if (this.parent != null) removeItemAtIndex(this.parent.children, this.parent.children.indexOf(this));
 		// Kill all of its children
 		let ID = this.id;
 		entities.forEach(instance => {
@@ -2639,12 +2640,12 @@ var logs = (() => {
 			obj.data.push(performance.now() - obj.time);
 		}
 		function record(obj) {
-			let o = util.averageArray(obj.data);
+			let o = calculateAverage(obj.data);
 			obj.data = [];
 			return o;
 		}
 		function sum(obj) {
-			let o = util.sumArray(obj.data);
+			let o = calculateSum(obj.data);
 			obj.data = [];
 			return o;
 		}
@@ -2988,7 +2989,7 @@ const sockets = (() => {
 				let n = connectedIPs.findIndex(w => { return w.ip === socket.ip; });
 				if (n !== -1) {
 					Logger.info(socket.ip + " disconnected.");
-					util.remove(connectedIPs, n);
+					removeItemAtIndex(connectedIPs, n);
 				}
 				// Free the token
 				if (socket.key != '' && Config.TOKEN_REQUIRED) {
@@ -3009,14 +3010,14 @@ const sockets = (() => {
 					}
 					// Disconnect everything
 					Logger.info('[INFO] User ' + player.name + ' disconnected!');
-					util.remove(players, index);
+					removeItemAtIndex(players, index);
 				} else {
 					Logger.info('[INFO] A player disconnected before entering the game.');
 				}
 				// Free the view
-				util.remove(views, views.indexOf(socket.view));
+				removeItemAtIndex(views, views.indexOf(socket.view));
 				// Remove the socket
-				util.remove(clients, clients.indexOf(socket));
+				removeItemAtIndex(clients, clients.indexOf(socket));
 				Logger.info('[INFO] Socket closed. Views: ' + views.length + '. Clients: ' + clients.length + '.');
 			}
 			// Banning
@@ -3069,7 +3070,7 @@ const sockets = (() => {
 							// Save the key
 							socket.key = key.substr(0, 64);
 							// Make it unavailable
-							util.remove(keys, keys.indexOf(key));
+							removeItemAtIndex(keys, keys.indexOf(key));
 							socket.verified = true;
 							// Proceed
 							socket.talk('w', true);
@@ -3094,9 +3095,9 @@ const sockets = (() => {
 						// Bring to life
 						socket.status.deceased = false;
 						// Define the player.
-						if (players.indexOf(socket.player) != -1) { util.remove(players, players.indexOf(socket.player)); }
+						if (players.indexOf(socket.player) != -1) { removeItemAtIndex(players, players.indexOf(socket.player)); }
 						// Free the old view
-						if (views.indexOf(socket.view) != -1) { util.remove(views, views.indexOf(socket.view)); socket.makeView(); }
+						if (views.indexOf(socket.view) != -1) { removeItemAtIndex(views, views.indexOf(socket.view)); socket.makeView(); }
 						socket.player = socket.spawn(name);
 						// Give it the room state
 						if (needsRoom) {
@@ -3691,7 +3692,7 @@ const sockets = (() => {
 					let fov = 0;
 					let o = {
 						add: e => { if (check(socket.camera, e)) nearby.push(e); },
-						remove: e => { let i = nearby.indexOf(e); if (i !== -1) util.remove(nearby, i); },
+						remove: e => { let i = nearby.indexOf(e); if (i !== -1) removeItemAtIndex(nearby, i); },
 						check: (e, f) => { return check(socket.camera, e); }, //Math.abs(e.x - x) < e.size + f*fov && Math.abs(e.y - y) < e.size + f*fov; },
 						gazeUpon: () => {
 							logs.network.set();
@@ -4912,7 +4913,7 @@ var maintainloop = (() => {
 			rot() {
 				if (--this.foodToMake < 0) {
 					//util.debug('FoodSpawner rotted, respawning.');
-					util.remove(foodSpawners, foodSpawners.indexOf(this));
+					removeItemAtIndex(foodSpawners, foodSpawners.indexOf(this));
 					foodSpawners.push(new FoodSpawner());
 				}
 			}
