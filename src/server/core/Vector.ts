@@ -13,11 +13,11 @@ export class Vector implements Vector2 {
 		this.y = 0;
 	}
 
-	get length() {
+	public get length() {
 		return Math.sqrt(this.x * this.x + this.y * this.y);
 	}
 
-	get direction() {
+	public get direction() {
 		return Math.atan2(this.y, this.x);
 	}
 }
