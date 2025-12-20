@@ -15,7 +15,7 @@ export function angleDifference(sourceAngle: number, targetAngle: number): numbe
 	if (difference < 0) {
 		difference += TAU;
 	}
-	return difference - TAU;
+	return difference - PI;
 }
 
 export function loopSmooth(angle: number, desiredAngle: number, slowness: number): number {
