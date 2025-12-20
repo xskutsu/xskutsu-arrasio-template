@@ -20,26 +20,6 @@ exports.clamp = function (value, min, max) {
 	return Math.min(Math.max(value, min), max);
 };
 
-
-/*exports.angleDifference = function(a1, a2) {
-    let diff1 = a2 - a1;
-    while (diff1 >= 2*Math.PI) {
-	  diff1 -= 2*Math.PI;
-    }
-    while (diff1 < 0) {
-	  diff1 += 2*Math.PI;
-    }
-    let diff2 = a1 - a2;
-    while (diff2 >= 2*Math.PI) {
-	  diff2 -= 2*Math.PI;
-    }
-    while (diff2 < 0) {
-	  diff2 += 2*Math.PI;
-    }
-
-    if (Math.abs(diff1) <= Math.abs(diff2)) { return diff1; }
-    if (Math.abs(diff2) <= Math.abs(diff1)) { return diff2; }
-};*/
 exports.angleDifference = (() => {
 	let mod = function (a, n) {
 		return (a % n + n) % n;
@@ -53,31 +33,6 @@ exports.angleDifference = (() => {
 exports.loopSmooth = (angle, desired, slowness) => {
 	return exports.angleDifference(angle, desired) / slowness;
 };
-
-/*exports.loopClamp = function(angle, min, max) {
-    angle = angle % (Math.PI * 2);
-    min = min % (Math.PI * 2); if (min < 0) min += Math.PI * 2;
-    max = max % (Math.PI * 2); if (max < 0) max += Math.PI * 2;
-    let a = (max - min) % (Math.PI * 2); if (a < 0) a += Math.PI * 2;
-    if (angle - min > a) return max;
-    if (angle - min < 0) return min;
-    return angle;
-};*/
-
-
-/*exports.pointInArc = function(point, givenAngle, allowedDifference) {
-    let len = Math.sqrt(point.x * point.x + point.y * point.y);
-    let norm = { x: point.x / len, y: point.y / len, };
-    let vect = { x: Math.cos(givenAngle), y: Math.sin(givenAngle), };
-    let dot = norm.x * vect.x + norm.y * vect.y;
-    let a1 = Math.atan2(point.y, point.x);
-    let a2 = Math.acos(dot);
-    let diff = exports.angleDifference(a1, a2);
-};*/
-
-/*exports.isInArc = function(angle, arc) {
-    return exports.loopClamp(angle, arc[0], arc[1]) == angle;
-};*/
 
 exports.averageArray = arr => {
 	if (!arr.length) return 0;
@@ -95,22 +50,6 @@ exports.getJackpot = x => {
 	return (x > 26300 * 1.5) ? Math.pow(x - 26300, 0.85) + 26300 : x / 1.5;
 };
 
-exports.serverStartTime = Date.now();
-// Get a better logging function
-exports.time = () => {
-	return Date.now() - exports.serverStartTime;
-};
-
-const log = console.log;
-exports.log = text => {
-	log('[' + (exports.time() / 1000).toFixed(3) + ']: ' + text);
-};
-exports.warn = text => {
-	log('[' + (exports.time() / 1000).toFixed(3) + ']: ' + '[WARNING] ' + text);
-};
-exports.error = text => {
-	log(text);
-};
 exports.remove = (array, index) => {
 	// there is more than one object in the container
 	if (index === array.length - 1) {
