@@ -11,6 +11,8 @@ const { Vector } = require("./core/Vector");
 const { Logger } = require("./utils/Logger");
 const { getDistance, angleDifference, loopSmooth, clamp } = require("./utils/math");
 const { calculateSum, calculateAverage, removeItemAtIndex } = require("./utils/array");
+const { addArticle } = require("../shared/utils/strings");
+const protocol = require('../shared/network/fasttalk');
 
 Logger.info("this is an info message.");
 Logger.warn("this is a warning message.");
@@ -20,7 +22,6 @@ Logger.error("this is an error message.");
 const { Config, JACKPOT_FACTOR, JACKPOT_THRESHOLD, JACKPOT_POWER } = require("./config");
 
 // Import utilities.
-const util = require('./lib/util');
 const ran = require('./lib/random');
 const hshg = require('./lib/hshg');
 
@@ -2508,7 +2509,7 @@ class Entity {
 					"a nameless player's " + this.label :
 					(this.master.type === 'miniboss') ?
 						"a visiting " + this.label :
-						util.addArticle(this.label)
+						addArticle(this.label)
 				:
 				this.master.name + "'s " + this.label;
 			// Calculate the jackpot
@@ -2556,7 +2557,7 @@ class Entity {
 			if (this.settings.broadcastMessage) sockets.broadcast(this.settings.broadcastMessage);
 			// Add the implements to the message
 			killTools.forEach((instance) => {
-				killText += util.addArticle(instance.label) + ' and ';
+				killText += addArticle(instance.label) + ' and ';
 			});
 			// Prepare it and clear the collision array.
 			killText = killText.slice(0, -5);
@@ -2976,7 +2977,6 @@ if (Config.servesStatic) {
 
 // Websocket behavior
 const sockets = (() => {
-	const protocol = require('../shared/fasttalk');
 	let clients = [], players = [], bannedIPs = [], suspiciousIPs = [], connectedIPs = [],
 		bannedNames = [
 			'FREE_FOOD_LUCARIO',
