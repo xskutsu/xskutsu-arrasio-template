@@ -9,15 +9,15 @@ const serverStartTime = Date.now();
 // General requires
 const { Vector } = require("./core/Vector");
 const { Logger } = require("./utils/Logger");
-const { getDistance, angleDifference, loopSmooth, clamp } = require("./utils/Math");
-const { calculateSum, calculateAverage, removeItemAtIndex } = require("./utils/Arrays");
+const { getDistance, angleDifference, loopSmooth, clamp } = require("./utils/math");
+const { calculateSum, calculateAverage, removeItemAtIndex } = require("./utils/array");
 
 Logger.info("this is an info message.");
 Logger.warn("this is a warning message.");
 Logger.error("this is an error message.");
 
 // Import game settings.
-const Config = require("./config").default;
+const { Config, JACKPOT_FACTOR, JACKPOT_THRESHOLD, JACKPOT_POWER } = require("./config");
 
 // Import utilities.
 const util = require('./lib/util');
@@ -1198,6 +1198,13 @@ class Skill {
 	change(skill, levels) {
 		this.raw[skcnv[skill]] += levels;
 		this.update();
+	}
+
+	calculateJackpot() {
+		if (this.score > JACKPOT_THRESHOLD * JACKPOT_FACTOR) {
+			return Math.pow(this.score - JACKPOT_THRESHOLD, JACKPOT_POWER) + JACKPOT_THRESHOLD;
+		}
+		return this.score / JACKPOT_FACTOR;
 	}
 }
 
@@ -2505,7 +2512,7 @@ class Entity {
 				:
 				this.master.name + "'s " + this.label;
 			// Calculate the jackpot
-			let jackpot = Math.ceil(util.getJackpot(this.skill.score) / this.collisionArray.length);
+			let jackpot = Math.ceil(this.skill.calculateJackpot() / this.collisionArray.length);
 			// Now for each of the things that kill me...
 			this.collisionArray.forEach(instance => {
 				if (instance.type === 'wall') return 0;

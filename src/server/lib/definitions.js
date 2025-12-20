@@ -1,4 +1,4 @@
-const Config = require("../config").default;
+const Config = require("../config");
 
 // GUN DEFINITIONS
 const combineStats = function (arr) {

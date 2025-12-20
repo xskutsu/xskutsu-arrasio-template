@@ -1,4 +1,4 @@
-export default {
+export const Config = {
 	host: "0.0.0.0",
 	servesStatic: true,
 	port: 3000,
@@ -91,3 +91,7 @@ export default {
 	GLASS_HEALTH_FACTOR: 2,
 	TOKEN_REQUIRED: false
 };
+
+export const JACKPOT_THRESHOLD: number = 26300;
+export const JACKPOT_FACTOR: number = 1.5;
+export const JACKPOT_POWER: number = 0.85;
