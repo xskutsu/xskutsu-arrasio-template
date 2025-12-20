@@ -95,3 +95,86 @@ export const Config = {
 export const JACKPOT_THRESHOLD: number = 26300;
 export const JACKPOT_FACTOR: number = 1.5;
 export const JACKPOT_POWER: number = 0.85;
+
+export const BOT_NAMES: string[] = [
+	"Alice",
+	"Bob",
+	"Carmen",
+	"David",
+	"Edith",
+	"Freddy",
+	"Gustav",
+	"Helga",
+	"Janet",
+	"Lorenzo",
+	"Mary",
+	"Nora",
+	"Olivia",
+	"Peter",
+	"Queen",
+	"Roger",
+	"Suzanne",
+	"Tommy",
+	"Ursula",
+	"Vincent",
+	"Wilhelm",
+	"Xerxes",
+	"Yvonne",
+	"Zachary",
+	"Alpha",
+	"Bravo",
+	"Charlie",
+	"Delta",
+	"Echo",
+	"Foxtrot",
+	"Hotel",
+	"India",
+	"Juliet",
+	"Kilo",
+	"Lima",
+	"Mike",
+	"November",
+	"Oscar",
+	"Papa",
+	"Quebec",
+	"Romeo",
+	"Sierra",
+	"Tango",
+	"Uniform",
+	"Victor",
+	"Whiskey",
+	"X-Ray",
+	"Yankee",
+	"Zulu"
+];
+
+export const BOSS_NAMES_A: string[] = [
+	"Archimedes",
+	"Akilina",
+	"Anastasios",
+	"Athena",
+	"Alkaios",
+	"Amyntas",
+	"Aniketos",
+	"Artemis",
+	"Anaxagoras",
+	"Apollon"
+];
+
+export const BOSS_NAMES_CASTLE: string[] = [
+	"Berezhany",
+	"Lutsk",
+	"Dobromyl",
+	"Akkerman",
+	"Palanok",
+	"Zolochiv",
+	"Palanok",
+	"Mangup",
+	"Olseko",
+	"Brody",
+	"Isiaslav",
+	"Kaffa",
+	"Bilhorod",
+];
+
+export const BOSS_NAME_DEFAULT: string = "GOD";

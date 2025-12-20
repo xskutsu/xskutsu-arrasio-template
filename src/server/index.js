@@ -13,16 +13,16 @@ const { getDistance, angleDifference, loopSmooth, clamp } = require("./utils/mat
 const { calculateSum, calculateAverage, removeItemAtIndex } = require("./utils/array");
 const { addArticle } = require("../shared/utils/strings");
 const protocol = require('../shared/network/fasttalk');
+const { random, randomAngle, randomRange, irandom, gauss, gaussInverse, gaussRing, chance, dice, choose, chooseChance, chooseN } = require("./utils/random");
 
 Logger.info("this is an info message.");
 Logger.warn("this is a warning message.");
 Logger.error("this is an error message.");
 
 // Import game settings.
-const { Config, JACKPOT_FACTOR, JACKPOT_THRESHOLD, JACKPOT_POWER } = require("./config");
+const { Config, JACKPOT_FACTOR, JACKPOT_THRESHOLD, JACKPOT_POWER, BOSS_NAMES_A, BOSS_NAMES_CASTLE, BOSS_NAME_DEFAULT, BOT_NAMES } = require("./config");
 
 // Import utilities.
-const ran = require('./lib/random');
 const hshg = require('./lib/hshg');
 
 // Define player keys
@@ -248,23 +248,23 @@ room.findType('rock');
 room.nestFoodAmount = 1.5 * Math.sqrt(room.nest.length) / room.xgrid / room.ygrid;
 room.random = () => {
 	return {
-		x: ran.irandom(room.width),
-		y: ran.irandom(room.height),
+		x: irandom(room.width),
+		y: irandom(room.height),
 	};
 };
 room.randomType = type => {
-	let selection = room[type][ran.irandom(room[type].length - 1)];
+	let selection = room[type][irandom(room[type].length - 1)];
 	return {
-		x: ran.irandom(0.5 * room.width / room.xgrid) * ran.choose([-1, 1]) + selection.x,
-		y: ran.irandom(0.5 * room.height / room.ygrid) * ran.choose([-1, 1]) + selection.y,
+		x: irandom(0.5 * room.width / room.xgrid) * choose([-1, 1]) + selection.x,
+		y: irandom(0.5 * room.height / room.ygrid) * choose([-1, 1]) + selection.y,
 	};
 };
 room.gauss = clustering => {
 	let output;
 	do {
 		output = {
-			x: ran.gauss(room.width / 2, room.height / clustering),
-			y: ran.gauss(room.width / 2, room.height / clustering),
+			x: gauss(room.width / 2, room.height / clustering),
+			y: gauss(room.width / 2, room.height / clustering),
 		};
 	} while (!room.isInRoom(output));
 };
@@ -272,8 +272,8 @@ room.gaussInverse = clustering => {
 	let output;
 	do {
 		output = {
-			x: ran.gaussInverse(0, room.width, clustering),
-			y: ran.gaussInverse(0, room.height, clustering),
+			x: gaussInverse(0, room.width, clustering),
+			y: gaussInverse(0, room.height, clustering),
 		};
 	} while (!room.isInRoom(output));
 	return output;
@@ -281,7 +281,7 @@ room.gaussInverse = clustering => {
 room.gaussRing = (radius, clustering) => {
 	let output;
 	do {
-		output = ran.gaussRing(room.width * radius, clustering);
+		output = gaussRing(room.width * radius, clustering);
 		output = {
 			x: output.x + room.width / 2,
 			y: output.y + room.height / 2,
@@ -312,12 +312,12 @@ room.isInNorm = location => {
 	}
 };
 room.gaussType = (type, clustering) => {
-	let selection = room[type][ran.irandom(room[type].length - 1)];
+	let selection = room[type][irandom(room[type].length - 1)];
 	let location = {};
 	do {
 		location = {
-			x: ran.gauss(selection.x, room.width / room.xgrid / clustering),
-			y: ran.gauss(selection.y, room.height / room.ygrid / clustering),
+			x: gauss(selection.x, room.width / room.xgrid / clustering),
+			y: gauss(selection.y, room.height / room.ygrid / clustering),
 		};
 	} while (!room.isIn(type, location));
 	return location;
@@ -405,7 +405,7 @@ class io_moveInCircles extends IO {
 	constructor(body) {
 		super(body);
 		this.acceptsFromTop = false;
-		this.timer = ran.irandom(10) + 3;
+		this.timer = irandom(10) + 3;
 		this.goal = {
 			x: this.body.x + 10 * Math.cos(-this.body.facing),
 			y: this.body.y + 10 * Math.sin(-this.body.facing),
@@ -608,7 +608,7 @@ class io_nearestDifferentMaster extends IO {
 	constructor(body) {
 		super(body);
 		this.targetLock = undefined;
-		this.tick = ran.irandom(30);
+		this.tick = irandom(30);
 		this.lead = 0;
 		this.validTargets = this.buildList(body.fov);
 		this.oldHealth = body.health.display();
@@ -793,7 +793,7 @@ class io_minion extends IO {
 	}
 
 	think(input) {
-		if (this.body.aiSettings.reverseDirection && ran.chance(0.005)) { this.turnwise = -1 * this.turnwise; }
+		if (this.body.aiSettings.reverseDirection && chance(0.005)) { this.turnwise = -1 * this.turnwise; }
 		if (input.target != null && (input.alt || input.main)) {
 			let sizeFactor = Math.sqrt(this.body.master.size / this.body.master.SIZE);
 			let leash = 60 * sizeFactor;
@@ -865,8 +865,8 @@ class io_hangOutNearMaster extends IO {
 			// Set a goal
 			if (dist > bound2 || this.timer > 30) {
 				this.timer = 0;
-				let dir = Math.atan2(this.body.source.y - this.body.y, this.body.source.x - this.body.x) + Math.PI * ran.random(0.5);
-				let len = ran.randomRange(bound1, bound2);
+				let dir = Math.atan2(this.body.source.y - this.body.y, this.body.source.x - this.body.x) + Math.PI * random();
+				let len = randomRange(bound1, bound2);
 				let x = this.body.source.x - len * Math.cos(dir);
 				let y = this.body.source.y - len * Math.sin(dir);
 				this.currentGoal = {
@@ -876,7 +876,7 @@ class io_hangOutNearMaster extends IO {
 			}
 			if (dist < bound2) {
 				output.power = 0.15;
-				if (ran.chance(0.3)) { this.timer++; }
+				if (chance(0.3)) { this.timer++; }
 			}
 			return output;
 		}
@@ -963,7 +963,7 @@ class io_dontTurn extends IO {
 class io_fleeAtLowHealth extends IO {
 	constructor(b) {
 		super(b);
-		this.fear = clamp(ran.gauss(0.7, 0.15), 0.1, 0.9);
+		this.fear = clamp(gauss(0.7, 0.15), 0.1, 0.9);
 	}
 
 	think(input) {
@@ -1426,10 +1426,10 @@ class Gun {
 		// Find inaccuracy
 		let ss, sd;
 		do {
-			ss = ran.gauss(0, Math.sqrt(this.settings.shudder));
+			ss = gauss(0, Math.sqrt(this.settings.shudder));
 		} while (Math.abs(ss) >= this.settings.shudder * 2);
 		do {
-			sd = ran.gauss(0, this.settings.spray * this.settings.shudder);
+			sd = gauss(0, this.settings.spray * this.settings.shudder);
 		} while (Math.abs(sd) >= this.settings.spray / 2);
 		sd *= Math.PI / 180;
 		// Find speed
@@ -1741,7 +1741,7 @@ class Entity {
 		this.addToGrid = () => { if (!this.isInGrid && this.bond == null) { grid.addObject(this); this.isInGrid = true; } };
 		this.activation = (() => {
 			let active = true;
-			let timer = ran.irandom(15);
+			let timer = irandom(15);
 			return {
 				update: () => {
 					if (this.isDead()) return 0;
@@ -1978,7 +1978,7 @@ class Entity {
 		}
 		if (set.VARIES_IN_SIZE != null) {
 			this.settings.variesInSize = set.VARIES_IN_SIZE;
-			this.squiggle = (this.settings.variesInSize) ? ran.randomRange(0.8, 1.2) : 1;
+			this.squiggle = (this.settings.variesInSize) ? randomRange(0.8, 1.2) : 1;
 		}
 		if (set.RESET_UPGRADES) {
 			this.upgrades = [];
@@ -3521,7 +3521,7 @@ const sockets = (() => {
 								if (v == m) { possiblities.push(i); }
 							}
 							// Choose from one of the least ones
-							if (player.team == null) { player.team = ran.choose(possiblities) + 1; }
+							if (player.team == null) { player.team = choose(possiblities) + 1; }
 							// Make sure you're in a base
 							if (room['bas' + player.team].length) do { loc = room.randomType('bas' + player.team); } while (dirtyCheck(loc, 50));
 							else do { loc = room.gaussInverse(5); } while (dirtyCheck(loc, 50));
@@ -3551,7 +3551,7 @@ const sockets = (() => {
 						} break;
 						default: {
 							body.color = (Config.RANDOM_COLORS) ?
-								ran.choose([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]) : 12; // red
+								choose([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]) : 12; // red
 						}
 					}
 					// Decide what to do about colors when sending updates and stuff
@@ -3926,7 +3926,7 @@ const sockets = (() => {
 					return () => {
 						// Update the minimap
 						entities.forEach((my) => {
-							if (my.settings.drawShape && ran.dice(my.stealth * Config.STEALTH)) {
+							if (my.settings.drawShape && dice(my.stealth * Config.STEALTH)) {
 								let i = minimap.findIndex((entry) => {
 									return entry[0] === my.id;
 								});
@@ -4683,7 +4683,7 @@ var maintainloop = (() => {
 			let o = new Entity(position);
 			o.define(entityClass);
 			o.team = -101;
-			o.facing = ran.randomAngle();
+			o.facing = randomAngle();
 			o.protect();
 			o.life();
 		}
@@ -4715,7 +4715,7 @@ var maintainloop = (() => {
 					spot = room.randomType(loc); m++;
 				} while (dirtyCheck(spot, 500) && m < 30);
 				let o = new Entity(spot);
-				o.define(ran.choose(bois));
+				o.define(choose(bois));
 				o.team = -100;
 				o.name = names[i++];
 			};
@@ -4724,7 +4724,17 @@ var maintainloop = (() => {
 					n = number;
 					bois = classArray;
 					loc = typeOfLocation;
-					names = ran.chooseBossName(nameClass, number);
+					switch (nameClass) {
+						case "a": {
+							names = chooseN(BOSS_NAMES_A, number)
+						}; break;
+						case "castle": {
+							names = chooseN(BOSS_NAMES_CASTLE, number);
+						}; break;
+						default: {
+							names = new Array(number).fill(BOSS_NAME_DEFAULT);
+						};
+					}
 					i = 0;
 					if (n === 1) {
 						begin = 'A visitor is coming.';
@@ -4739,7 +4749,7 @@ var maintainloop = (() => {
 				spawn: () => {
 					sockets.broadcast(begin);
 					for (let i = 0; i < n; i++) {
-						setTimeout(spawn, ran.randomRange(3500, 5000));
+						setTimeout(spawn, randomRange(3500, 5000));
 					}
 					// Wrap things up.
 					setTimeout(() => sockets.broadcast(arrival), 5000);
@@ -4748,11 +4758,11 @@ var maintainloop = (() => {
 			};
 		})();
 		return census => {
-			if (timer > 6000 && ran.dice(16000 - timer)) {
+			if (timer > 6000 && dice(16000 - timer)) {
 				Logger.info('[SPAWN] Preparing to spawn...');
 				timer = 0;
 				let choice = [];
-				switch (ran.chooseChance(40, 1)) {
+				switch (chooseChance([40, 1])) {
 					case 0:
 						choice = [[Class.elite_destroyer], 2, 'a', 'nest'];
 						break;
@@ -4768,10 +4778,10 @@ var maintainloop = (() => {
 		};
 	})();
 	let spawnCrasher = census => {
-		if (ran.chance(1 - 0.5 * census.crasher / room.maxFood / room.nestFoodAmount)) {
+		if (chance(1 - 0.5 * census.crasher / room.maxFood / room.nestFoodAmount)) {
 			let spot, i = 30;
 			do { spot = room.randomType('nest'); i--; if (!i) return 0; } while (dirtyCheck(spot, 100));
-			let type = (ran.dice(80)) ? ran.choose([Class.sentryGun, Class.sentrySwarm, Class.sentryTrap]) : Class.crasher;
+			let type = (dice(80)) ? choose([Class.sentryGun, Class.sentrySwarm, Class.sentryTrap]) : Class.crasher;
 			let o = new Entity(spot);
 			o.define(type);
 			o.team = -100;
@@ -4812,7 +4822,7 @@ var maintainloop = (() => {
 				  o.color = 17;
 				  o.define(Class.bot);
 				  o.define(Class.basic);
-				  o.name += ran.chooseBotName();
+				  o.name += choose(BOT_NAMES);
 				  o.refreshBodyAttributes();
 				  o.color = 17;
 				  bots.push(o);
@@ -4857,7 +4867,7 @@ var maintainloop = (() => {
 			if (o != null) {
 				for (let i = 50; i > 0; i--) {
 					if (scatter == -1 || getDistance(position, o) < scatter) {
-						if (ran.dice((o.foodLevel + 1) * (o.foodLevel + 1))) {
+						if (dice((o.foodLevel + 1) * (o.foodLevel + 1))) {
 							mitosis = true; break;
 						} else {
 							seed = true; break;
@@ -4877,7 +4887,7 @@ var maintainloop = (() => {
 					let new_o = new Entity(place);
 					new_o.define(getFoodClass(levelToMake));
 					new_o.team = -100;
-					new_o.facing = o.facing + ran.randomRange(Math.PI / 2, Math.PI);
+					new_o.facing = o.facing + randomRange(Math.PI / 2, Math.PI);
 					food.push(new_o);
 					return new_o;
 				}
@@ -4887,7 +4897,7 @@ var maintainloop = (() => {
 						o = new Entity(position);
 						o.define(getFoodClass(level));
 						o.team = -100;
-						o.facing = ran.randomAngle();
+						o.facing = randomAngle();
 						food.push(o);
 						return o;
 					}
@@ -4897,7 +4907,7 @@ var maintainloop = (() => {
 		// Define foodspawners
 		class FoodSpawner {
 			constructor() {
-				this.foodToMake = Math.ceil(Math.abs(ran.gauss(0, room.scale.linear * 80)));
+				this.foodToMake = Math.ceil(Math.abs(gauss(0, room.scale.linear * 80)));
 				this.size = Math.sqrt(this.foodToMake) * 25;
 
 				// Determine where we ought to go
@@ -4908,7 +4918,7 @@ var maintainloop = (() => {
 				} while (o == null);
 
 				// Produce a few more
-				for (let i = Math.ceil(Math.abs(ran.gauss(0, 4))); i <= 0; i--) {
+				for (let i = Math.ceil(Math.abs(gauss(0, 4))); i <= 0; i--) {
 					placeNewFood(o, this.size, 0);
 				}
 
@@ -4933,8 +4943,8 @@ var maintainloop = (() => {
 		// Food making functions
 		let makeGroupedFood = () => { // Create grouped food
 			// Choose a location around a spawner
-			let spawner = foodSpawners[ran.irandom(foodSpawners.length - 1)],
-				bubble = ran.gaussRing(spawner.size, 1 / 4);
+			let spawner = foodSpawners[irandom(foodSpawners.length - 1)],
+				bubble = gaussRing(spawner.size, 1 / 4);
 			placeNewFood({ x: spawner.x + bubble.x, y: spawner.y + bubble.y, }, -1, 0);
 			spawner.rot();
 		};
@@ -4995,20 +5005,20 @@ var maintainloop = (() => {
 			let foodAmount = census.sum;
 			let nestFoodAmount = censusNest.sum;
 			/*********** ROT OLD SPAWNERS **********/
-			foodSpawners.forEach(spawner => { if (ran.chance(1 - foodAmount / maxFood)) spawner.rot(); });
+			foodSpawners.forEach(spawner => { if (chance(1 - foodAmount / maxFood)) spawner.rot(); });
 			/************** MAKE FOOD **************/
-			while (ran.chance(0.8 * (1 - foodAmount * foodAmount / maxFood / maxFood))) {
-				switch (ran.chooseChance(10, 2, 1)) {
+			while (chance(0.8 * (1 - foodAmount * foodAmount / maxFood / maxFood))) {
+				switch (chooseChance([10, 2, 1])) {
 					case 0: makeGroupedFood(); break;
 					case 1: makeDistributedFood(); break;
 					case 2: makeCornerFood(); break;
 				}
 			}
-			while (ran.chance(0.5 * (1 - nestFoodAmount * nestFoodAmount / maxNestFood / maxNestFood))) makeNestFood();
+			while (chance(0.5 * (1 - nestFoodAmount * nestFoodAmount / maxNestFood / maxNestFood))) makeNestFood();
 			/************* UPGRADE FOOD ************/
 			if (!food.length) return 0;
 			for (let i = Math.ceil(food.length / 100); i > 0; i--) {
-				let o = food[ran.irandom(food.length - 1)], // A random food instance
+				let o = food[irandom(food.length - 1)], // A random food instance
 					oldId = -1000,
 					overflow, location;
 				// Bounce 6 times
@@ -5016,7 +5026,7 @@ var maintainloop = (() => {
 					overflow = 10;
 					// Find the nearest one that's not the last one
 					do {
-						o = nearest(food, { x: ran.gauss(o.x, 30), y: ran.gauss(o.y, 30), });
+						o = nearest(food, { x: gauss(o.x, 30), y: gauss(o.y, 30), });
 					} while (o.id === oldId && --overflow);
 					if (!overflow) continue;
 					// Configure for the nest if needed
@@ -5029,10 +5039,10 @@ var maintainloop = (() => {
 						amount = nestFoodAmount;
 					}
 					// Upgrade stuff
-					o.foodCountup += Math.ceil(Math.abs(ran.gauss(0, 10)));
+					o.foodCountup += Math.ceil(Math.abs(gauss(0, 10)));
 					while (o.foodCountup >= (o.foodLevel + 1) * 100) {
 						o.foodCountup -= (o.foodLevel + 1) * 100;
-						if (ran.chance(1 - cens[o.foodLevel + 1] / amount / proportions[o.foodLevel + 1])) {
+						if (chance(1 - cens[o.foodLevel + 1] / amount / proportions[o.foodLevel + 1])) {
 							o.define(getFoodClass(o.foodLevel + 1));
 						}
 					}
