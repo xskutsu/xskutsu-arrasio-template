@@ -16,7 +16,7 @@ const protocol = require('../shared/network/fasttalk');
 const { random, randomAngle, randomRange, irandom, gauss, gaussInverse, gaussRing, chance, dice, choose, chooseChance, chooseN } = require("./utils/random");
 
 // Import game settings.
-const { Config, JACKPOT_FACTOR, JACKPOT_THRESHOLD, JACKPOT_POWER, BOSS_NAMES_A, BOSS_NAMES_CASTLE, BOSS_NAME_DEFAULT, BOT_NAMES } = require("./config");
+const { Config, BANNED_NAME_CHARACTERS, JACKPOT_FACTOR, JACKPOT_THRESHOLD, JACKPOT_POWER, BOSS_NAMES_A, BOSS_NAMES_CASTLE, BOSS_NAME_DEFAULT, BOT_NAMES } = require("./config");
 
 // Import utilities.
 const hshg = require('./lib/hshg');
@@ -3089,7 +3089,7 @@ const sockets = (() => {
 						if (!socket.status.deceased) { socket.kick('Trying to spawn while already alive.'); return 1; }
 						if (m.length !== 2) { socket.kick('Ill-sized spawn request.'); return 1; }
 						// Get data
-						let name = m[0].replace(Config.BANNED_CHARACTERS_REGEX, '');
+						let name = m[0].replace(BANNED_NAME_CHARACTERS, '');
 						let needsRoom = m[1];
 						// Verify it
 						if (typeof name != 'string') { socket.kick('Bad spawn request.'); return 1; }

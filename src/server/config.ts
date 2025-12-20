@@ -24,7 +24,6 @@ export const Config = {
 	HEIGHT: 2000,
 	MODE: "tdm",
 	RANDOM_COLORS: false,
-	BANNED_CHARACTER_REGEX: "/[\uFDFD\u200E\u0000]/gi",
 	ROOM_SETUP: [
 		[
 			"roid",
@@ -91,6 +90,8 @@ export const Config = {
 	GLASS_HEALTH_FACTOR: 2,
 	TOKEN_REQUIRED: false
 };
+
+export const BANNED_NAME_CHARACTERS: RegExp = /[\uFDFD\u200E\u0000]/giu;
 
 export const JACKPOT_THRESHOLD: number = 26300;
 export const JACKPOT_FACTOR: number = 1.5;
