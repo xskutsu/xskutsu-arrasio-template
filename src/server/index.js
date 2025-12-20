@@ -23,17 +23,6 @@ const util = require('./lib/util');
 const ran = require('./lib/random');
 const hshg = require('./lib/hshg');
 
-// Let's get a cheaper array removal thing
-Array.prototype.remove = index => {
-	if (index === this.length - 1) {
-		return this.pop();
-	} else {
-		let r = this[index];
-		this[index] = this.pop();
-		return r;
-	}
-};
-
 // Define player keys
 var keys = [
 	'k', 'l', 'testk', 'testl',
