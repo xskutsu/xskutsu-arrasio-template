@@ -5131,11 +5131,11 @@ process.on("SIGINT", () => {
 			Logger.info('Final warning broadcasted.');
 			setTimeout(() => {
 				Logger.warn('Process ended.');
-				process.exit();
+				process.exit(1);
 			}, 3000);
 		}, 17000);
 	} else {
 		Logger.info("Forcefully shutting down...");
-		process.exit();
+		process.exit(1);
 	}
 });
