@@ -1,3 +1,5 @@
+const Config = require("../config").default;
+
 // GUN DEFINITIONS
 const combineStats = function (arr) {
 	try {
@@ -29,7 +31,6 @@ const combineStats = function (arr) {
 	}
 };
 const skillSet = (() => {
-	let config = require('../config.json');
 	let skcnv = {
 		rld: 0,
 		pen: 1,
@@ -47,7 +48,7 @@ const skillSet = (() => {
 		let skills = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 		for (let s in args) {
 			if (!args.hasOwnProperty(s)) continue;
-			skills[skcnv[s]] = Math.round(config.MAX_SKILL * args[s]);
+			skills[skcnv[s]] = Math.round(Config.MAX_SKILL * args[s]);
 		}
 		return skills;
 	};

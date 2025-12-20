@@ -7,8 +7,7 @@
 // General requires
 
 // Import game settings.
-const c = require('./config.json');
-
+const Config = require("./config").default;
 const { Vector } = require("./core/Vector");
 
 // Import utilities.
@@ -193,30 +192,30 @@ var keys = [
 	'FrostyAndBeautifulJustLikeYourColdHeart',
 ];
 
-if (!c.TOKEN_REQUIRED) {
+if (!Config.TOKEN_REQUIRED) {
 	keys.push("")
 }
 
 // Set up room.
 global.fps = "Unknown";
-var roomSpeed = c.gameSpeed;
+var roomSpeed = Config.gameSpeed;
 const room = {
 	lastCycle: undefined,
 	cycleSpeed: 1000 / roomSpeed / 30,
-	width: c.WIDTH,
-	height: c.HEIGHT,
-	setup: c.ROOM_SETUP,
-	xgrid: c.X_GRID,
-	ygrid: c.Y_GRID,
-	gameMode: c.MODE,
-	skillBoost: c.SKILL_BOOST,
+	width: Config.WIDTH,
+	height: Config.HEIGHT,
+	setup: Config.ROOM_SETUP,
+	xgrid: Config.X_GRID,
+	ygrid: Config.Y_GRID,
+	gameMode: Config.MODE,
+	skillBoost: Config.SKILL_BOOST,
 	scale: {
-		square: c.WIDTH * c.HEIGHT / 100000000,
-		linear: Math.sqrt(c.WIDTH * c.HEIGHT / 100000000),
+		square: Config.WIDTH * Config.HEIGHT / 100000000,
+		linear: Math.sqrt(Config.WIDTH * Config.HEIGHT / 100000000),
 	},
-	maxFood: c.WIDTH * c.HEIGHT / 100000 * c.FOOD_AMOUNT,
+	maxFood: Config.WIDTH * Config.HEIGHT / 100000 * Config.FOOD_AMOUNT,
 	isInRoom: location => {
-		return (location.x < 0 || location.x > c.WIDTH || location.y < 0 || location.y > c.HEIGHT) ? (
+		return (location.x < 0 || location.x > Config.WIDTH || location.y < 0 || location.y > Config.HEIGHT) ? (
 			false
 		) : (
 			true
@@ -1008,8 +1007,8 @@ class Skill {
 		this.raw = inital;
 		this.caps = [];
 		this.setCaps([
-			c.MAX_SKILL, c.MAX_SKILL, c.MAX_SKILL, c.MAX_SKILL, c.MAX_SKILL,
-			c.MAX_SKILL, c.MAX_SKILL, c.MAX_SKILL, c.MAX_SKILL, c.MAX_SKILL
+			Config.MAX_SKILL, Config.MAX_SKILL, Config.MAX_SKILL, Config.MAX_SKILL, Config.MAX_SKILL,
+			Config.MAX_SKILL, Config.MAX_SKILL, Config.MAX_SKILL, Config.MAX_SKILL, Config.MAX_SKILL
 		]);
 		this.name = [
 			'Reload',
@@ -1055,9 +1054,9 @@ class Skill {
 		let curve = (() => {
 			function make(x) { return Math.log(4 * x + 1) / Math.log(5); }
 			let a = [];
-			for (let i = 0; i < c.MAX_SKILL * 2; i++) { a.push(make(i / c.MAX_SKILL)); }
+			for (let i = 0; i < Config.MAX_SKILL * 2; i++) { a.push(make(i / Config.MAX_SKILL)); }
 			// The actual lookup function
-			return x => { return a[x * c.MAX_SKILL]; };
+			return x => { return a[x * Config.MAX_SKILL]; };
 		})();
 		function apply(f, x) { return (x < 0) ? 1 / (1 - x * f) : f * x + 1; }
 		for (let i = 0; i < 10; i++) {
@@ -1073,7 +1072,7 @@ class Skill {
 					(
 						this.raw[i + 5 * j] +
 						this.bleed(i, j)
-					) / c.MAX_SKILL);
+					) / Config.MAX_SKILL);
 			}
 		}
 		this.rld = Math.pow(0.5, attrib[skcnv.rld]);
@@ -1087,9 +1086,9 @@ class Skill {
 		this.rst = 0.5 * attrib[skcnv.str] + 2.5 * attrib[skcnv.pen];
 		this.ghost = attrib[skcnv.pen];
 
-		this.shi = c.GLASS_HEALTH_FACTOR * apply(3 / c.GLASS_HEALTH_FACTOR - 1, attrib[skcnv.shi]);
+		this.shi = Config.GLASS_HEALTH_FACTOR * apply(3 / Config.GLASS_HEALTH_FACTOR - 1, attrib[skcnv.shi]);
 		this.atk = apply(1, attrib[skcnv.atk]);
-		this.hlt = c.GLASS_HEALTH_FACTOR * apply(2 / c.GLASS_HEALTH_FACTOR - 1, attrib[skcnv.hlt]);
+		this.hlt = Config.GLASS_HEALTH_FACTOR * apply(2 / Config.GLASS_HEALTH_FACTOR - 1, attrib[skcnv.hlt]);
 		this.mob = apply(0.8, attrib[skcnv.mob]);
 		this.rgn = apply(25, attrib[skcnv.rgn]);
 
@@ -1125,12 +1124,12 @@ class Skill {
 	}
 
 	maintain() {
-		if (this.level < c.SKILL_CAP) {
+		if (this.level < Config.SKILL_CAP) {
 			if (this.score - this.deduction >= this.levelScore) {
 				this.deduction += this.levelScore;
 				this.level += 1;
 				this.points += this.levelPoints;
-				if (this.level == c.TIER_1 || this.level == c.TIER_2 || this.level == c.TIER_3) {
+				if (this.level == Config.TIER_1 || this.level == Config.TIER_2 || this.level == Config.TIER_3) {
 					this.canUpgrade = true;
 				}
 				this.update();
@@ -1154,8 +1153,8 @@ class Skill {
 	}
 
 	cap(skill, real = false) {
-		if (!real && this.level < c.SKILL_SOFT_CAP) {
-			return Math.round(this.caps[skcnv[skill]] * c.SOFT_MAX_SKILL);
+		if (!real && this.level < Config.SKILL_SOFT_CAP) {
+			return Math.round(this.caps[skcnv[skill]] * Config.SOFT_MAX_SKILL);
 		}
 		return this.caps[skcnv[skill]];
 	}
@@ -1164,9 +1163,9 @@ class Skill {
 		let a = ((i + 2) % 5) + 5 * j,
 			b = ((i + ((j === 1) ? 1 : 4)) % 5) + 5 * j;
 		let value = 0;
-		let denom = Math.max(c.MAX_SKILL, this.caps[i + 5 * j]);
-		value += (1 - Math.pow(this.raw[a] / denom - 1, 2)) * this.raw[a] * c.SKILL_LEAK;
-		value -= Math.pow(this.raw[b] / denom, 2) * this.raw[b] * c.SKILL_LEAK;
+		let denom = Math.max(Config.MAX_SKILL, this.caps[i + 5 * j]);
+		value += (1 - Math.pow(this.raw[a] / denom - 1, 2)) * this.raw[a] * Config.SKILL_LEAK;
+		value -= Math.pow(this.raw[b] / denom, 2) * this.raw[b] * Config.SKILL_LEAK;
 
 		return value;
 	}
@@ -1430,8 +1429,8 @@ class Gun {
 		sd *= Math.PI / 180;
 		// Find speed
 		let s = new Vector(
-			((this.negRecoil) ? -1 : 1) * this.settings.speed * c.runSpeed * sk.spd * (1 + ss) * Math.cos(this.angle + this.body.facing + sd),
-			((this.negRecoil) ? -1 : 1) * this.settings.speed * c.runSpeed * sk.spd * (1 + ss) * Math.sin(this.angle + this.body.facing + sd)
+			((this.negRecoil) ? -1 : 1) * this.settings.speed * Config.runSpeed * sk.spd * (1 + ss) * Math.cos(this.angle + this.body.facing + sd),
+			((this.negRecoil) ? -1 : 1) * this.settings.speed * Config.runSpeed * sk.spd * (1 + ss) * Math.sin(this.angle + this.body.facing + sd)
 		);
 		// Boost it if we should
 		if (this.body.velocity.length) {
@@ -1513,7 +1512,7 @@ class Gun {
 
 	getTracking() {
 		return {
-			speed: c.runSpeed * ((this.bulletStats == 'master') ? this.body.skill.spd : this.bulletStats.spd) *
+			speed: Config.runSpeed * ((this.bulletStats == 'master') ? this.body.skill.spd : this.bulletStats.spd) *
 				this.settings.maxSpeed *
 				this.natural.SPEED,
 			range: Math.sqrt((this.bulletStats == 'master') ? this.body.skill.spd : this.bulletStats.spd) *
@@ -1981,17 +1980,17 @@ class Entity {
 		}
 		if (set.UPGRADES_TIER_1 != null) {
 			set.UPGRADES_TIER_1.forEach((e) => {
-				this.upgrades.push({ class: e, level: c.TIER_1, index: e.index, });
+				this.upgrades.push({ class: e, level: Config.TIER_1, index: e.index, });
 			});
 		}
 		if (set.UPGRADES_TIER_2 != null) {
 			set.UPGRADES_TIER_2.forEach((e) => {
-				this.upgrades.push({ class: e, level: c.TIER_2, index: e.index, });
+				this.upgrades.push({ class: e, level: Config.TIER_2, index: e.index, });
 			});
 		}
 		if (set.UPGRADES_TIER_3 != null) {
 			set.UPGRADES_TIER_3.forEach((e) => {
-				this.upgrades.push({ class: e, level: c.TIER_3, index: e.index, });
+				this.upgrades.push({ class: e, level: Config.TIER_3, index: e.index, });
 			});
 		}
 		if (set.SIZE != null) {
@@ -2008,7 +2007,7 @@ class Entity {
 			if (set.LEVEL === -1) {
 				this.skill.reset();
 			}
-			while (this.skill.level < c.SKILL_CHEAT_CAP && this.skill.level < set.LEVEL) {
+			while (this.skill.level < Config.SKILL_CHEAT_CAP && this.skill.level < set.LEVEL) {
 				this.skill.score += this.skill.levelScore;
 				this.skill.maintain();
 			}
@@ -2108,10 +2107,10 @@ class Entity {
 	refreshBodyAttributes() {
 		let speedReduce = Math.pow(this.size / (this.coreSize || this.SIZE), 1);
 
-		this.acceleration = c.runSpeed * this.ACCELERATION / speedReduce;
+		this.acceleration = Config.runSpeed * this.ACCELERATION / speedReduce;
 		if (this.settings.reloadToAcceleration) this.acceleration *= this.skill.acl;
 
-		this.topSpeed = c.runSpeed * this.SPEED * this.skill.mob / speedReduce;
+		this.topSpeed = Config.runSpeed * this.SPEED * this.skill.mob / speedReduce;
 		if (this.settings.reloadToAcceleration) this.topSpeed /= Math.sqrt(this.skill.acl);
 
 		this.health.set(
@@ -2446,10 +2445,10 @@ class Entity {
 			return 0;
 		}
 		if (!this.settings.canGoOutsideRoom) {
-			this.accel.x -= Math.min(this.x - this.realSize + 50, 0) * c.ROOM_BOUND_FORCE / roomSpeed;
-			this.accel.x -= Math.max(this.x + this.realSize - room.width - 50, 0) * c.ROOM_BOUND_FORCE / roomSpeed;
-			this.accel.y -= Math.min(this.y - this.realSize + 50, 0) * c.ROOM_BOUND_FORCE / roomSpeed;
-			this.accel.y -= Math.max(this.y + this.realSize - room.height - 50, 0) * c.ROOM_BOUND_FORCE / roomSpeed;
+			this.accel.x -= Math.min(this.x - this.realSize + 50, 0) * Config.ROOM_BOUND_FORCE / roomSpeed;
+			this.accel.x -= Math.max(this.x + this.realSize - room.width - 50, 0) * Config.ROOM_BOUND_FORCE / roomSpeed;
+			this.accel.y -= Math.min(this.y - this.realSize + 50, 0) * Config.ROOM_BOUND_FORCE / roomSpeed;
+			this.accel.y -= Math.max(this.y + this.realSize - room.height - 50, 0) * Config.ROOM_BOUND_FORCE / roomSpeed;
 		}
 		if (room.gameMode === 'tdm' && this.type !== 'food') {
 			let loc = { x: this.x, y: this.y, };
@@ -2964,7 +2963,7 @@ var express = require('express'),
 
 // Give the client upon request
 exportDefintionsToClient(__dirname + "/mockups.json");
-if (c.servesStatic) {
+if (Config.servesStatic) {
 	app.use(express.static(__dirname + '/../public'));
 	app.get("/json/mockups.json", function (request, response) {
 		response.sendFile(__dirname + "/mockups.json");
@@ -2996,7 +2995,7 @@ const sockets = (() => {
 					util.remove(connectedIPs, n);
 				}
 				// Free the token
-				if (socket.key != '' && c.TOKEN_REQUIRED) {
+				if (socket.key != '' && Config.TOKEN_REQUIRED) {
 					keys.push(socket.key);
 					util.log("Token freed.");
 				}
@@ -3041,7 +3040,7 @@ const sockets = (() => {
 				} else {
 					suspiciousIPs[n].warns++;
 					util.warn(reason + ' Kicking. ' + suspiciousIPs[n].warns + ' warnings.');
-					if (suspiciousIPs[n].warns >= c.socketWarningLimit) {
+					if (suspiciousIPs[n].warns >= Config.socketWarningLimit) {
 						ban(socket);
 					}
 				}
@@ -3070,7 +3069,7 @@ const sockets = (() => {
 						if (key.length > 64) { socket.kick('Overly-long key offered.'); return 1; }
 						if (socket.status.verified) { socket.kick('Duplicate player spawn attempt.'); return 1; }
 						// Otherwise proceed to check if it's available.
-						if (keys.indexOf(key) != -1 || !c.TOKEN_REQUIRED) {
+						if (keys.indexOf(key) != -1 || !Config.TOKEN_REQUIRED) {
 							// Save the key
 							socket.key = key.substr(0, 64);
 							// Make it unavailable
@@ -3090,7 +3089,7 @@ const sockets = (() => {
 						if (!socket.status.deceased) { socket.kick('Trying to spawn while already alive.'); return 1; }
 						if (m.length !== 2) { socket.kick('Ill-sized spawn request.'); return 1; }
 						// Get data
-						let name = m[0].replace(c.BANNED_CHARACTERS_REGEX, '');
+						let name = m[0].replace(Config.BANNED_CHARACTERS_REGEX, '');
 						let needsRoom = m[1];
 						// Verify it
 						if (typeof name != 'string') { socket.kick('Bad spawn request.'); return 1; }
@@ -3109,7 +3108,7 @@ const sockets = (() => {
 								'R',
 								room.width,
 								room.height,
-								JSON.stringify(c.ROOM_SETUP),
+								JSON.stringify(Config.ROOM_SETUP),
 								JSON.stringify(util.serverStartTime),
 								roomSpeed
 							);
@@ -3150,7 +3149,7 @@ const sockets = (() => {
 						socket.camera.lastDowndate = util.time();
 						// Schedule a new update cycle
 						// Either fires immediately or however much longer it's supposed to wait per the config.
-						socket.update(Math.max(0, (1000 / c.networkUpdateFactor) - (util.time() - socket.camera.lastUpdate)));
+						socket.update(Math.max(0, (1000 / Config.networkUpdateFactor) - (util.time() - socket.camera.lastUpdate)));
 					} break;
 					case 'C': { // command packet
 						if (m.length !== 3) { socket.kick('Ill-sized command packet.'); return 1; }
@@ -3244,7 +3243,7 @@ const sockets = (() => {
 						if (m.length !== 0) { socket.kick('Ill-sized level-up request.'); return 1; }
 						// cheatingbois
 						if (player.body != null) {
-							if (player.body.skill.level < c.SKILL_CHEAT_CAP || ((socket.key === 'testk' || socket.key === 'testl') && player.body.skill.level < 45)) {
+							if (player.body.skill.level < Config.SKILL_CHEAT_CAP || ((socket.key === 'testk' || socket.key === 'testl') && player.body.skill.level < 45)) {
 								player.body.skill.score += player.body.skill.levelScore;
 								player.body.skill.maintain();
 								player.body.refreshBodyAttributes();
@@ -3274,7 +3273,7 @@ const sockets = (() => {
 				// This function will be called in the slow loop
 				return () => {
 					// Kick if it's d/c'd
-					if (util.time() - socket.status.lastHeartbeat > c.maxHeartbeatInterval) {
+					if (util.time() - socket.status.lastHeartbeat > Config.maxHeartbeatInterval) {
 						socket.kick('Heartbeat lost.'); return 0;
 					}
 					// Add a strike if there's more than 50 requests in a second
@@ -3547,12 +3546,12 @@ const sockets = (() => {
 							body.color = [10, 11, 12, 15][player.team - 1];
 						} break;
 						default: {
-							body.color = (c.RANDOM_COLORS) ?
+							body.color = (Config.RANDOM_COLORS) ?
 								ran.choose([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]) : 12; // red
 						}
 					}
 					// Decide what to do about colors when sending updates and stuff
-					player.teamColor = (!c.RANDOM_COLORS && room.gameMode === 'ffa') ? 10 : body.color; // blue
+					player.teamColor = (!Config.RANDOM_COLORS && room.gameMode === 'ffa') ? 10 : body.color; // blue
 					// Set up the targeting structure
 					player.target = {
 						x: 0,
@@ -3747,7 +3746,7 @@ const sockets = (() => {
 							x = camera.x; y = camera.y; fov = camera.fov;
 							// Find what the user can see.
 							// Update which entities are nearby
-							if (camera.lastUpdate - lastVisibleUpdate > c.visibleListInterval) {
+							if (camera.lastUpdate - lastVisibleUpdate > Config.visibleListInterval) {
 								// Update our timer
 								lastVisibleUpdate = camera.lastUpdate;
 								// And update the nearby list
@@ -3786,14 +3785,14 @@ const sockets = (() => {
 								...view
 							);
 							// Queue up some for the front util.log if needed
-							if (socket.status.receiving < c.networkFrontlog) {
+							if (socket.status.receiving < Config.networkFrontlog) {
 								socket.update(Math.max(
 									0,
-									(1000 / c.networkUpdateFactor) - (camera.lastDowndate - camera.lastUpdate),
-									camera.ping / c.networkFrontlog
+									(1000 / Config.networkUpdateFactor) - (camera.lastDowndate - camera.lastUpdate),
+									camera.ping / Config.networkFrontlog
 								));
 							} else {
-								socket.update(c.networkFallbackTime);
+								socket.update(Config.networkFallbackTime);
 							}
 							logs.network.mark();
 						},
@@ -3923,7 +3922,7 @@ const sockets = (() => {
 					return () => {
 						// Update the minimap
 						entities.forEach((my) => {
-							if (my.settings.drawShape && ran.dice(my.stealth * c.STEALTH)) {
+							if (my.settings.drawShape && ran.dice(my.stealth * Config.STEALTH)) {
 								let i = minimap.findIndex((entry) => {
 									return entry[0] === my.id;
 								});
@@ -4118,7 +4117,7 @@ const sockets = (() => {
 					let time = util.time();
 					clients.forEach(socket => {
 						if (socket.timeout.check(time)) socket.kick('Kicked for inactivity.');
-						if (time - socket.statuslastHeartbeat > c.maxHeartbeatInterval) socket.kick('Lost heartbeat.');
+						if (time - socket.statuslastHeartbeat > Config.maxHeartbeatInterval) socket.kick('Lost heartbeat.');
 					});
 				}
 				// Start it
@@ -4143,7 +4142,7 @@ const sockets = (() => {
 			// This function initalizes the socket upon connection
 			return (socket, req) => {
 				// Get information about the new connection and verify it
-				if (c.servesStatic || req.connection.remoteAddress === '::ffff:127.0.0.1' || req.connection.remoteAddress === '::1') {
+				if (Config.servesStatic || req.connection.remoteAddress === '::ffff:127.0.0.1' || req.connection.remoteAddress === '::1') {
 					socket.ip = req.headers['x-forwarded-for'];
 					// Make sure we're not banned...
 					if (bannedIPs.findIndex(ip => { return ip === socket.ip; }) !== -1) {
@@ -4151,7 +4150,7 @@ const sockets = (() => {
 						return 1;
 					}
 					// Make sure we're not already connected...
-					if (!c.servesStatic) {
+					if (!Config.servesStatic) {
 						let n = connectedIPs.findIndex(w => { return w.ip === socket.ip; });
 						if (n !== -1) {
 							// Don't allow more than 2
@@ -4180,7 +4179,7 @@ const sockets = (() => {
 					let timer = 0;
 					return {
 						set: val => { if (mem !== val) { mem = val; timer = util.time(); } },
-						check: time => { return timer && time - timer > c.maxHeartbeatInterval; },
+						check: time => { return timer && time - timer > Config.maxHeartbeatInterval; },
 					};
 				})();
 				// Set up the status container
@@ -4437,7 +4436,7 @@ var gameloop = (() => {
 							let resistDiff = my.health.resist - n.health.resist,
 								damage = {
 									_me:
-										c.DAMAGE_CONSTANT *
+										Config.DAMAGE_CONSTANT *
 										my.damage *
 										(1 + resistDiff) *
 										(1 + n.heteroMultiplier * (my.settings.damageClass === n.settings.damageClass)) *
@@ -4445,7 +4444,7 @@ var gameloop = (() => {
 										my.damageMultiplier() *
 										Math.min(2, Math.max(speedFactor._me, 1) * speedFactor._me),
 									_n:
-										c.DAMAGE_CONSTANT *
+										Config.DAMAGE_CONSTANT *
 										n.damage *
 										(1 - resistDiff) *
 										(1 + my.heteroMultiplier * (my.settings.damageClass === n.settings.damageClass)) *
@@ -4519,15 +4518,15 @@ var gameloop = (() => {
 								elasticity * component *
 								my.mass * n.mass / (my.mass + n.mass),
 							springImpulse =
-								c.KNOCKBACK_CONSTANT * spring * combinedDepth.up,
+								Config.KNOCKBACK_CONSTANT * spring * combinedDepth.up,
 							impulse = -(elasticImpulse + springImpulse) * (1 - my.intangibility) * (1 - n.intangibility),
 							force = {
 								x: impulse * dir.x,
 								y: impulse * dir.y,
 							},
 							modifiers = {
-								_me: c.KNOCKBACK_CONSTANT * my.pushability / my.mass * deathFactor._n,
-								_n: c.KNOCKBACK_CONSTANT * n.pushability / n.mass * deathFactor._me,
+								_me: Config.KNOCKBACK_CONSTANT * my.pushability / my.mass * deathFactor._n,
+								_n: Config.KNOCKBACK_CONSTANT * n.pushability / n.mass * deathFactor._me,
 							};
 						// Apply impulse as force
 						my.accel.x += modifiers._me * force.x;
@@ -5017,11 +5016,11 @@ var maintainloop = (() => {
 					} while (o.id === oldId && --overflow);
 					if (!overflow) continue;
 					// Configure for the nest if needed
-					let proportions = c.FOOD,
+					let proportions = Config.FOOD,
 						cens = census,
 						amount = foodAmount;
 					if (room.isIn('nest', o)) {
-						proportions = c.FOOD_NEST;
+						proportions = Config.FOOD_NEST;
 						cens = censusNest;
 						amount = nestFoodAmount;
 					}
@@ -5098,13 +5097,13 @@ var server = http.createServer(app);
 var websockets = (() => {
 	// Configure the websocketserver
 	let config = { server: server };
-	if (c.servesStatic) {
-		server.listen(c.port, function httpListening() {
+	if (Config.servesStatic) {
+		server.listen(Config.port, function httpListening() {
 			util.log((new Date()) + ". Joint HTTP+Websocket server turned on, listening on port " + server.address().port + ".");
 		});
 	} else {
-		config.port = c.port;
-		util.log((new Date()) + 'Websocket server turned on, listening on port ' + c.port + '.');
+		config.port = Config.port;
+		util.log((new Date()) + 'Websocket server turned on, listening on port ' + Config.port + '.');
 	}
 	// Build it
 	return new WebSocket.Server(config);

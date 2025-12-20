@@ -2,7 +2,7 @@
 
 'use strict';
 
-var cfg = require('../config.json');
+const Config = require("../config").default;
 
 exports.addArticle = function (string) {
 	return (/[aeiouAEIOU]/.test(string[0])) ? 'an ' + string : 'a ' + string;
