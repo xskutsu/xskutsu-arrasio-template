@@ -15,10 +15,6 @@ const { addArticle } = require("../shared/utils/strings");
 const protocol = require('../shared/network/fasttalk');
 const { random, randomAngle, randomRange, irandom, gauss, gaussInverse, gaussRing, chance, dice, choose, chooseChance, chooseN } = require("./utils/random");
 
-Logger.info("this is an info message.");
-Logger.warn("this is a warning message.");
-Logger.error("this is an error message.");
-
 // Import game settings.
 const { Config, JACKPOT_FACTOR, JACKPOT_THRESHOLD, JACKPOT_POWER, BOSS_NAMES_A, BOSS_NAMES_CASTLE, BOSS_NAME_DEFAULT, BOT_NAMES } = require("./config");
 
