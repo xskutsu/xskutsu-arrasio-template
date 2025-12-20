@@ -1657,6 +1657,9 @@ class HealthType {
 	}
 
 	display() {
+		if (this.max === 0) {
+			return 0;
+		}
 		return this.amount / this.max;
 	}
 
