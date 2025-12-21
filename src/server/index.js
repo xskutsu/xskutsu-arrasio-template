@@ -14,6 +14,7 @@ const { calculateSum, calculateAverage, removeItemAtIndex } = require("./utils/a
 const { addArticle } = require("../shared/utils/strings");
 const protocol = require('../shared/network/fasttalk');
 const { random, randomAngle, randomRange, irandom, gauss, gaussInverse, gaussRing, chance, dice, choose, chooseChance, chooseN } = require("./utils/random");
+const { Room } = require("./game/room");
 
 // Import game settings.
 const { Config, BANNED_NAME_CHARACTERS, JACKPOT_FACTOR, JACKPOT_THRESHOLD, JACKPOT_POWER, BOSS_NAMES_A, BOSS_NAMES_CASTLE, BOSS_NAME_DEFAULT, BOT_NAMES } = require("./config");
@@ -192,133 +193,11 @@ if (!Config.TOKEN_REQUIRED) {
 }
 
 // Set up room.
+Room.init();
+
 global.fps = "Unknown";
 var roomSpeed = Config.gameSpeed;
-const room = {
-	lastCycle: undefined,
-	cycleSpeed: 1000 / roomSpeed / 30,
-	width: Config.WIDTH,
-	height: Config.HEIGHT,
-	setup: Config.ROOM_SETUP,
-	xgrid: Config.X_GRID,
-	ygrid: Config.Y_GRID,
-	gameMode: Config.MODE,
-	skillBoost: Config.SKILL_BOOST,
-	scale: {
-		square: Config.WIDTH * Config.HEIGHT / 100000000,
-		linear: Math.sqrt(Config.WIDTH * Config.HEIGHT / 100000000),
-	},
-	maxFood: Config.WIDTH * Config.HEIGHT / 100000 * Config.FOOD_AMOUNT,
-	isInRoom: location => {
-		return (location.x < 0 || location.x > Config.WIDTH || location.y < 0 || location.y > Config.HEIGHT) ? (
-			false
-		) : (
-			true
-		);
-	},
-	topPlayerID: -1,
-};
-room.findType = type => {
-	let output = [];
-	let j = 0;
-	room.setup.forEach(row => {
-		let i = 0;
-		row.forEach(cell => {
-			if (cell === type) {
-				output.push({ x: (i + 0.5) * room.width / room.xgrid, y: (j + 0.5) * room.height / room.ygrid, });
-			}
-			i++;
-		});
-		j++;
-	});
-	room[type] = output;
-};
-room.findType('nest');
-room.findType('norm');
-room.findType('bas1');
-room.findType('bas2');
-room.findType('bas3');
-room.findType('bas4');
-room.findType('roid');
-room.findType('rock');
-room.nestFoodAmount = 1.5 * Math.sqrt(room.nest.length) / room.xgrid / room.ygrid;
-room.random = () => {
-	return {
-		x: irandom(room.width),
-		y: irandom(room.height),
-	};
-};
-room.randomType = type => {
-	let selection = room[type][irandom(room[type].length - 1)];
-	return {
-		x: irandom(0.5 * room.width / room.xgrid) * choose([-1, 1]) + selection.x,
-		y: irandom(0.5 * room.height / room.ygrid) * choose([-1, 1]) + selection.y,
-	};
-};
-room.gauss = clustering => {
-	let output;
-	do {
-		output = {
-			x: gauss(room.width / 2, room.height / clustering),
-			y: gauss(room.width / 2, room.height / clustering),
-		};
-	} while (!room.isInRoom(output));
-};
-room.gaussInverse = clustering => {
-	let output;
-	do {
-		output = {
-			x: gaussInverse(0, room.width, clustering),
-			y: gaussInverse(0, room.height, clustering),
-		};
-	} while (!room.isInRoom(output));
-	return output;
-};
-room.gaussRing = (radius, clustering) => {
-	let output;
-	do {
-		output = gaussRing(room.width * radius, clustering);
-		output = {
-			x: output.x + room.width / 2,
-			y: output.y + room.height / 2,
-		};
-	} while (!room.isInRoom(output));
-	return output;
-};
-room.isIn = (type, location) => {
-	if (location.x == null || location.y == null || isNaN(location.x) || isNaN(location.y)) {
-		throw "InvalidPositionError"
-	}
-	if (room.isInRoom(location)) {
-		let a = Math.floor(location.y * room.ygrid / room.height);
-		let b = Math.floor(location.x * room.xgrid / room.width);
-		return type === room.setup[a][b];
-	} else {
-		return false;
-	}
-};
-room.isInNorm = location => {
-	if (room.isInRoom(location)) {
-		let a = Math.floor(location.y * room.ygrid / room.height);
-		let b = Math.floor(location.x * room.xgrid / room.width);
-		let v = room.setup[a][b];
-		return v !== 'nest';
-	} else {
-		return false;
-	}
-};
-room.gaussType = (type, clustering) => {
-	let selection = room[type][irandom(room[type].length - 1)];
-	let location = {};
-	do {
-		location = {
-			x: gauss(selection.x, room.width / room.xgrid / clustering),
-			y: gauss(selection.y, room.height / room.ygrid / clustering),
-		};
-	} while (!room.isIn(type, location));
-	return location;
-};
-Logger.info(room.width + ' x ' + room.height + ' room initalized.  Max food: ' + room.maxFood + ', max nest food: ' + (room.maxFood * room.nestFoodAmount) + '.');
+Logger.info(Room.width + ' x ' + Room.height + ' room initalized.  Max food: ' + Room.maxFood + ', max nest food: ' + (Room.maxFood * Room.nestFoodAmount) + '.');
 
 // Get class definitions and index them
 var Class = (() => {
@@ -2447,17 +2326,17 @@ class Entity {
 		}
 		if (!this.settings.canGoOutsideRoom) {
 			this.accel.x -= Math.min(this.x - this.realSize + 50, 0) * Config.ROOM_BOUND_FORCE / roomSpeed;
-			this.accel.x -= Math.max(this.x + this.realSize - room.width - 50, 0) * Config.ROOM_BOUND_FORCE / roomSpeed;
+			this.accel.x -= Math.max(this.x + this.realSize - Room.width - 50, 0) * Config.ROOM_BOUND_FORCE / roomSpeed;
 			this.accel.y -= Math.min(this.y - this.realSize + 50, 0) * Config.ROOM_BOUND_FORCE / roomSpeed;
-			this.accel.y -= Math.max(this.y + this.realSize - room.height - 50, 0) * Config.ROOM_BOUND_FORCE / roomSpeed;
+			this.accel.y -= Math.max(this.y + this.realSize - Room.height - 50, 0) * Config.ROOM_BOUND_FORCE / roomSpeed;
 		}
-		if (room.gameMode === 'tdm' && this.type !== 'food') {
+		if (Room.gameMode === 'tdm' && this.type !== 'food') {
 			let loc = { x: this.x, y: this.y, };
 			if (
-				(this.team !== -1 && room.isIn('bas1', loc)) ||
-				(this.team !== -2 && room.isIn('bas2', loc)) ||
-				(this.team !== -3 && room.isIn('bas3', loc)) ||
-				(this.team !== -4 && room.isIn('bas4', loc))
+				(this.team !== -1 && Room.isIn('bas1', loc)) ||
+				(this.team !== -2 && Room.isIn('bas2', loc)) ||
+				(this.team !== -3 && Room.isIn('bas3', loc)) ||
+				(this.team !== -4 && Room.isIn('bas4', loc))
 			) { this.kill(); }
 		}
 	}
@@ -2560,7 +2439,7 @@ class Entity {
 			if (killText === 'You have been kille') killText = 'You have died a stupid death';
 			this.sendMessage(killText + '.');
 			// If I'm the leader, broadcast it:
-			if (this.id === room.topPlayerID) {
+			if (this.id === Room.topPlayerID) {
 				let usurptText = (this.name === '') ? 'The leader' : this.name;
 				if (notJustFood) {
 					usurptText += ' has been usurped by';
@@ -3106,8 +2985,8 @@ const sockets = (() => {
 						if (needsRoom) {
 							socket.talk(
 								'R',
-								room.width,
-								room.height,
+								Room.width,
+								Room.height,
 								JSON.stringify(Config.ROOM_SETUP),
 								JSON.stringify(serverStartTime),
 								roomSpeed
@@ -3500,7 +3379,7 @@ const sockets = (() => {
 					let player = {}, loc = {};
 					// Find the desired team (if any) and from that, where you ought to spawn
 					player.team = socket.rememberedTeam;
-					switch (room.gameMode) {
+					switch (Room.gameMode) {
 						case "tdm": {
 							// Count how many others there are
 							let census = [1, 1, 1, 1], scoreCensus = [1, 1, 1, 1];
@@ -3510,7 +3389,8 @@ const sockets = (() => {
 							});
 							let possiblities = [];
 							for (let i = 0, m = 0; i < 4; i++) {
-								let v = Math.round(1000000 * (room['bas' + (i + 1)].length + 1) / (census[i] + 1) / scoreCensus[i]);
+								const baseSpawnPointCount = Room.spawnPoints.get("bas" + (i + 1)).length;
+								let v = Math.round(1000000 * (baseSpawnPointCount + 1) / (census[i] + 1) / scoreCensus[i]);
 								if (v > m) {
 									m = v; possiblities = [i];
 								}
@@ -3519,10 +3399,10 @@ const sockets = (() => {
 							// Choose from one of the least ones
 							if (player.team == null) { player.team = choose(possiblities) + 1; }
 							// Make sure you're in a base
-							if (room['bas' + player.team].length) do { loc = room.randomType('bas' + player.team); } while (dirtyCheck(loc, 50));
-							else do { loc = room.gaussInverse(5); } while (dirtyCheck(loc, 50));
+							if (Room.spawnPoints.get("bas" + player.team).length > 0) do { loc = Room.randomType('bas' + player.team); } while (dirtyCheck(loc, 50));
+							else do { loc = Room.gaussInverse(5); } while (dirtyCheck(loc, 50));
 						} break;
-						default: do { loc = room.gaussInverse(5); } while (dirtyCheck(loc, 50));
+						default: do { loc = Room.gaussInverse(5); } while (dirtyCheck(loc, 50));
 					}
 					socket.rememberedTeam = player.team;
 					// Create and bind a body for the player host
@@ -3540,7 +3420,7 @@ const sockets = (() => {
 					body.invuln = true; // Make it safe
 					player.body = body;
 					// Decide how to color and team the body
-					switch (room.gameMode) {
+					switch (Room.gameMode) {
 						case "tdm": {
 							body.team = -player.team;
 							body.color = [10, 11, 12, 15][player.team - 1];
@@ -3551,7 +3431,7 @@ const sockets = (() => {
 						}
 					}
 					// Decide what to do about colors when sending updates and stuff
-					player.teamColor = (!Config.RANDOM_COLORS && room.gameMode === 'ffa') ? 10 : body.color; // blue
+					player.teamColor = (!Config.RANDOM_COLORS && Room.gameMode === 'ffa') ? 10 : body.color; // blue
 					// Set up the targeting structure
 					player.target = {
 						x: 0,
@@ -3702,9 +3582,9 @@ const sockets = (() => {
 							let player = socket.player,
 								camera = socket.camera;
 							// If nothing has changed since the last update, wait (approximately) until then to update
-							let rightNow = room.lastCycle;
+							let rightNow = Room.lastCycle;
 							if (rightNow === camera.lastUpdate) {
-								socket.update(5 + room.cycleSpeed - performance.now() + rightNow);
+								socket.update(5 + Room.cycleSpeed - performance.now() + rightNow);
 								return 1;
 							}
 							// ...elseeeeee...
@@ -3837,8 +3717,8 @@ const sockets = (() => {
 									// Round all the old data
 									data = data.map(d => {
 										return [
-											Math.round(255 * clamp(d[0] / room.width, 0, 1)),
-											Math.round(255 * clamp(d[1] / room.height, 0, 1)),
+											Math.round(255 * clamp(d[0] / Room.width, 0, 1)),
+											Math.round(255 * clamp(d[1] / Room.height, 0, 1)),
 											d[2]
 										];
 									});
@@ -3867,7 +3747,7 @@ const sockets = (() => {
 							};
 						}
 						// Define the function
-						return (room.gameMode === 'ffa') ?
+						return (Room.gameMode === 'ffa') ?
 							// ffa function builder
 							(() => {
 								// Make flatteners
@@ -4005,7 +3885,7 @@ const sockets = (() => {
 									case -3: return 12;
 									case -4: return 15;
 									default: {
-										if (room.gameMode === 'tdm') return entry.color;
+										if (Room.gameMode === 'tdm') return entry.color;
 										return 11;
 									}
 								}
@@ -4096,7 +3976,7 @@ const sockets = (() => {
 							}
 						}
 						topTen = topTen.filter(e => { return e; });
-						room.topPlayerID = (topTen.length) ? topTen[0].id : -1;
+						Room.topPlayerID = (topTen.length) ? topTen[0].id : -1;
 						// Remove empty values and process it
 						lb = flatten(topTen);
 						// Return the reader
@@ -4657,7 +4537,7 @@ var gameloop = (() => {
 		logs.master.mark();
 		// Remove dead entities
 		purgeEntities();
-		room.lastCycle = performance.now();
+		Room.lastCycle = performance.now();
 	};
 	//let expected = 1000 / c.gameSpeed / 30;
 	//let alphaFactor = (delta > expected) ? expected / delta : 1;
@@ -4672,7 +4552,7 @@ var maintainloop = (() => {
 			let x = 0;
 			let position;
 			do {
-				position = room.randomType(type);
+				position = Room.randomType(type);
 				x++;
 				if (x > 200) { Logger.warn("Could not place some roids."); return 0; }
 			} while (dirtyCheck(position, 10 + entityClass.SIZE));
@@ -4684,8 +4564,8 @@ var maintainloop = (() => {
 			o.life();
 		}
 		// Start placing them
-		let roidcount = room.roid.length * room.width * room.height / room.xgrid / room.ygrid / 50000 / 1.5;
-		let rockcount = room.rock.length * room.width * room.height / room.xgrid / room.ygrid / 250000 / 1.5;
+		let roidcount = Room.spawnPoints.get("roid").length * Room.width * Room.height / Room.xgrid / Room.ygrid / 50000 / 1.5;
+		let rockcount = Room.spawnPoints.get("rock").length * Room.width * Room.height / Room.xgrid / Room.ygrid / 250000 / 1.5;
 		let count = 0;
 		for (let i = Math.ceil(roidcount); i; i--) { count++; placeRoid('roid', Class.obstacle); }
 		for (let i = Math.ceil(roidcount * 0.3); i; i--) { count++; placeRoid('roid', Class.babyObstacle); }
@@ -4708,7 +4588,7 @@ var maintainloop = (() => {
 			let spawn = () => {
 				let spot, m = 0;
 				do {
-					spot = room.randomType(loc); m++;
+					spot = Room.randomType(loc); m++;
 				} while (dirtyCheck(spot, 500) && m < 30);
 				let o = new Entity(spot);
 				o.define(choose(bois));
@@ -4774,9 +4654,9 @@ var maintainloop = (() => {
 		};
 	})();
 	let spawnCrasher = census => {
-		if (chance(1 - 0.5 * census.crasher / room.maxFood / room.nestFoodAmount)) {
+		if (chance(1 - 0.5 * census.crasher / Room.maxFood / Room.nestFoodAmount)) {
 			let spot, i = 30;
-			do { spot = room.randomType('nest'); i--; if (!i) return 0; } while (dirtyCheck(spot, 100));
+			do { spot = Room.randomType('nest'); i--; if (!i) return 0; } while (dirtyCheck(spot, 100));
 			let type = (dice(80)) ? choose([Class.sentryGun, Class.sentrySwarm, Class.sentryTrap]) : Class.crasher;
 			let o = new Entity(spot);
 			o.define(type);
@@ -4814,7 +4694,7 @@ var maintainloop = (() => {
 			spawnBosses(census);
 			/*/ Bots
 			    if (bots.length < c.BOTS) {
-				  let o = new Entity(room.random());
+				  let o = new Entity(Room.random());
 				  o.color = 17;
 				  o.define(Class.bot);
 				  o.define(Class.basic);
@@ -4874,7 +4754,7 @@ var maintainloop = (() => {
 			// Decide what to do
 			if (scatter != -1 || mitosis || seed) {
 				// Splitting
-				if (o != null && (mitosis || seed) && room.isIn('nest', o) === allowInNest) {
+				if (o != null && (mitosis || seed) && Room.isIn('nest', o) === allowInNest) {
 					let levelToMake = (mitosis) ? o.foodLevel : level,
 						place = {
 							x: o.x + o.size * Math.cos(o.facing),
@@ -4888,7 +4768,7 @@ var maintainloop = (() => {
 					return new_o;
 				}
 				// Brand new
-				else if (room.isIn('nest', position) === allowInNest) {
+				else if (Room.isIn('nest', position) === allowInNest) {
 					if (!dirtyCheck(position, 20)) {
 						o = new Entity(position);
 						o.define(getFoodClass(level));
@@ -4903,13 +4783,13 @@ var maintainloop = (() => {
 		// Define foodspawners
 		class FoodSpawner {
 			constructor() {
-				this.foodToMake = Math.ceil(Math.abs(gauss(0, room.scale.linear * 80)));
+				this.foodToMake = Math.ceil(Math.abs(gauss(0, Room.scale.linear * 80)));
 				this.size = Math.sqrt(this.foodToMake) * 25;
 
 				// Determine where we ought to go
 				let position = {}; let o;
 				do {
-					position = room.gaussRing(1 / 3, 20);
+					position = Room.gaussRing(1 / 3, 20);
 					o = placeNewFood(position, this.size, 0);
 				} while (o == null);
 
@@ -4947,17 +4827,17 @@ var maintainloop = (() => {
 		let makeDistributedFood = () => { // Distribute food everywhere
 			//util.debug('Creating new distributed food.');
 			let spot = {};
-			do { spot = room.gaussRing(1 / 2, 2); } while (room.isInNorm(spot));
-			placeNewFood(spot, 0.01 * room.width, 0);
+			do { spot = Room.gaussRing(1 / 2, 2); } while (Room.isInNorm(spot));
+			placeNewFood(spot, 0.01 * Room.width, 0);
 		};
 		let makeCornerFood = () => { // Distribute food in the corners
 			let spot = {};
-			do { spot = room.gaussInverse(5); } while (room.isInNorm(spot));
-			placeNewFood(spot, 0.05 * room.width, 0);
+			do { spot = Room.gaussInverse(5); } while (Room.isInNorm(spot));
+			placeNewFood(spot, 0.05 * Room.width, 0);
 		};
 		let makeNestFood = () => { // Make nest pentagons
-			let spot = room.randomType('nest');
-			placeNewFood(spot, 0.01 * room.width, 3, true);
+			let spot = Room.randomType('nest');
+			placeNewFood(spot, 0.01 * Room.width, 3, true);
 		};
 		// Return the full function
 		return () => {
@@ -4989,15 +4869,15 @@ var maintainloop = (() => {
 					if (instance.type === 'tank') {
 						census.tank++;
 					} else if (instance.foodLevel > -1) {
-						if (room.isIn('nest', { x: instance.x, y: instance.y, })) { censusNest.sum++; censusNest[instance.foodLevel]++; }
+						if (Room.isIn('nest', { x: instance.x, y: instance.y, })) { censusNest.sum++; censusNest[instance.foodLevel]++; }
 						else { census.sum++; census[instance.foodLevel]++; }
 						return instance;
 					}
 				} catch (err) { Logger.error(instance.label); Logger.error(err); instance.kill(); }
 			}).filter(e => { return e; });
 			// Sum it up
-			let maxFood = 1 + room.maxFood + 15 * census.tank;
-			let maxNestFood = 1 + room.maxFood * room.nestFoodAmount;
+			let maxFood = 1 + Room.maxFood + 15 * census.tank;
+			let maxNestFood = 1 + Room.maxFood * Room.nestFoodAmount;
 			let foodAmount = census.sum;
 			let nestFoodAmount = censusNest.sum;
 			/*********** ROT OLD SPAWNERS **********/
@@ -5029,7 +4909,7 @@ var maintainloop = (() => {
 					let proportions = Config.FOOD,
 						cens = census,
 						amount = foodAmount;
-					if (room.isIn('nest', o)) {
+					if (Room.isIn('nest', o)) {
 						proportions = Config.FOOD_NEST;
 						cens = censusNest;
 						amount = nestFoodAmount;
@@ -5120,7 +5000,7 @@ var websockets = (() => {
 })().on('connection', sockets.connect);
 
 // Bring it to life
-setInterval(gameloop, room.cycleSpeed);
+setInterval(gameloop, Room.cycleSpeed);
 setInterval(maintainloop, 200);
 setInterval(speedcheckloop, 1000);
 
