@@ -1,4 +1,4 @@
-export type Encodablevalueue = string | number | boolean;
+export type EncodableValue = string | number | boolean;
 
 const MAX_EIGHT_BIT_UNSIGNED: number = 0x100;
 const MAX_SIXTEEN_BIT_UNSIGNED: number = 0x10000;
@@ -25,7 +25,7 @@ const textEncoder: TextEncoder = new TextEncoder();
 const textDecoder: TextDecoder = new TextDecoder("utf-8");
 
 class PacketBuilder {
-	private static buffer: Uint8Array = new Uint8Array(256);
+	private static buffer: Uint8Array = new Uint8Array(4096);
 	private static view: DataView = new DataView(this.buffer.buffer);
 	private static offset: number = 0;
 
@@ -106,7 +106,7 @@ class PacketBuilder {
 	}
 }
 
-export function encode(inputArray: Encodablevalueue[]): Uint8Array {
+export function encode(inputArray: EncodableValue[]): Uint8Array {
 	PacketBuilder.prepare();
 	for (const valueue of inputArray) {
 		if (typeof valueue === "string") {
@@ -158,11 +158,11 @@ export function encode(inputArray: Encodablevalueue[]): Uint8Array {
 	return PacketBuilder.getPacket();
 }
 
-export function decode(rawBuffer: ArrayBuffer | Uint8Array): Encodablevalueue[] {
+export function decode(rawBuffer: ArrayBuffer | Uint8Array): EncodableValue[] {
 	const buffer: Uint8Array<ArrayBufferLike> = rawBuffer instanceof Uint8Array ? rawBuffer : new Uint8Array(rawBuffer);
 	const view: DataView<ArrayBufferLike> = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
 	let offset: number = 0;
-	const output: Encodablevalueue[] = [];
+	const output: EncodableValue[] = [];
 	while (offset < buffer.length) {
 		const tag: number = view.getUint8(offset) as Tag;
 		offset += 1;
