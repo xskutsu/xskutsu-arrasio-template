@@ -24,11 +24,11 @@ export function calculateAverage(array: number[]): number {
 }
 
 export function removeItemAtIndex<T>(array: T[], index: number): T | undefined {
-	const length: number = array.length;
-	if (index === length - 1) {
+	if (index < 0 || index >= array.length) {
+		return undefined;
+	}
+	if (index === array.length - 1) {
 		return array.pop();
 	}
-	const removed: T = array[index];
-	array[index] = array.pop()!;
-	return removed;
+	return array.splice(index, 1)[0];
 }
