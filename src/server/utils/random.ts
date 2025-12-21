@@ -114,17 +114,12 @@ export function choose<T>(array: T[]): T {
 export function chooseN<T>(array: T[], n: number): T[] {
 	const o: T[] = [];
 	for (let i: number = 0; i < n; i++) {
-		const length: number = array.length;
-		if (length === 0) {
+		if (array.length === 0) {
 			break;
 		}
-		const idx: number = Math.floor(rng() * length);
-		const item: T = array[idx];
-		if (idx !== length - 1) {
-			array[idx] = array[length - 1];
-		}
-		array.pop();
-		o.push(item);
+		const idx: number = Math.floor(rng() * array.length);
+		const spliced = array.splice(idx, 1);
+		o.push(spliced[0]);
 	}
 	return o;
 }
