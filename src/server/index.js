@@ -713,7 +713,7 @@ class io_hangOutNearMaster extends IO {
 			// Set a goal
 			if (dist > bound2 || this.timer > 30) {
 				this.timer = 0;
-				let dir = Math.atan2(this.body.source.y - this.body.y, this.body.source.x - this.body.x) + Math.PI * random();
+				let dir = Math.atan2(this.body.source.y - this.body.y, this.body.source.x - this.body.x) + Math.PI * random(0.5);
 				let len = randomRange(bound1, bound2);
 				let x = this.body.source.x - len * Math.cos(dir);
 				let y = this.body.source.y - len * Math.sin(dir);
