@@ -8,7 +8,7 @@ const serverStartTime = Date.now();
 
 // General requires
 const { Vector } = require("./core/Vector");
-const { Logger } = require("./utils/Logger");
+const { Logger } = require("../shared/utils/logger");
 const { getDistance, angleDifference, loopSmooth, clamp } = require("./utils/math");
 const { calculateSum, calculateAverage, removeItemAtIndex } = require("./utils/array");
 const { addArticle } = require("../shared/utils/strings");
@@ -17,6 +17,7 @@ const { random, randomAngle, randomRange, irandom, gauss, gaussInverse, gaussRin
 const { Room } = require("./game/room");
 const { determineNearest, timeOfImpact } = require("./utils/physics");
 const { lazyRealSizes } = require("./definitions/constants");
+const { Skill } = require("./game/Skill");
 
 // Import game settings.
 const { Config, BANNED_NAME_CHARACTERS, JACKPOT_FACTOR, JACKPOT_THRESHOLD, JACKPOT_POWER, BOSS_NAMES_A, BOSS_NAMES_CASTLE, BOSS_NAME_DEFAULT, BOT_NAMES } = require("./config");
@@ -827,235 +828,6 @@ class io_fleeAtLowHealth extends IO {
 }
 
 /***** ENTITIES *****/
-// Define skills
-const skcnv = {
-	rld: 0,
-	pen: 1,
-	str: 2,
-	dam: 3,
-	spd: 4,
-
-	shi: 5,
-	atk: 6,
-	hlt: 7,
-	rgn: 8,
-	mob: 9,
-};
-const levelers = [
-	1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
-	11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-	21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
-	31, 32, 33, 34, 35, 36, 38, 40, 42, 44,
-];
-class Skill {
-	constructor(inital = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]) { // Just skill stuff.
-		this.raw = inital;
-		this.caps = [];
-		this.setCaps([
-			Config.MAX_SKILL, Config.MAX_SKILL, Config.MAX_SKILL, Config.MAX_SKILL, Config.MAX_SKILL,
-			Config.MAX_SKILL, Config.MAX_SKILL, Config.MAX_SKILL, Config.MAX_SKILL, Config.MAX_SKILL
-		]);
-		this.name = [
-			'Reload',
-			'Bullet Penetration',
-			'Bullet Health',
-			'Bullet Damage',
-			'Bullet Speed',
-			'Shield Capacity',
-			'Body Damage',
-			'Max Health',
-			'Shield Regeneration',
-			'Movement Speed',
-		];
-		this.atk = 0;
-		this.hlt = 0;
-		this.spd = 0;
-		this.str = 0;
-		this.pen = 0;
-		this.dam = 0;
-		this.rld = 0;
-		this.mob = 0;
-		this.rgn = 0;
-		this.shi = 0;
-		this.rst = 0;
-		this.brst = 0;
-		this.ghost = 0;
-		this.acl = 0;
-
-		this.reset();
-	}
-
-	reset() {
-		this.points = 0;
-		this.score = 0;
-		this.deduction = 0;
-		this.level = 0;
-		this.canUpgrade = false;
-		this.update();
-		this.maintain();
-	}
-
-	update() {
-		let curve = (() => {
-			function make(x) { return Math.log(4 * x + 1) / Math.log(5); }
-			let a = [];
-			for (let i = 0; i < Config.MAX_SKILL * 2; i++) { a.push(make(i / Config.MAX_SKILL)); }
-			// The actual lookup function
-			return x => { return a[x * Config.MAX_SKILL]; };
-		})();
-		function apply(f, x) { return (x < 0) ? 1 / (1 - x * f) : f * x + 1; }
-		for (let i = 0; i < 10; i++) {
-			if (this.raw[i] > this.caps[i]) {
-				this.points += this.raw[i] - this.caps[i];
-				this.raw[i] = this.caps[i];
-			}
-		}
-		let attrib = [];
-		for (let i = 0; i < 5; i++) {
-			for (let j = 0; j < 2; j += 1) {
-				attrib[i + 5 * j] = curve(
-					(
-						this.raw[i + 5 * j] +
-						this.bleed(i, j)
-					) / Config.MAX_SKILL);
-			}
-		}
-		this.rld = Math.pow(0.5, attrib[skcnv.rld]);
-		this.pen = apply(2.5, attrib[skcnv.pen]);
-		this.str = apply(2, attrib[skcnv.str]);
-		this.dam = apply(3, attrib[skcnv.dam]);
-		this.spd = 0.5 + apply(1.5, attrib[skcnv.spd]);
-
-		this.acl = apply(0.5, attrib[skcnv.rld]);
-
-		this.rst = 0.5 * attrib[skcnv.str] + 2.5 * attrib[skcnv.pen];
-		this.ghost = attrib[skcnv.pen];
-
-		this.shi = Config.GLASS_HEALTH_FACTOR * apply(3 / Config.GLASS_HEALTH_FACTOR - 1, attrib[skcnv.shi]);
-		this.atk = apply(1, attrib[skcnv.atk]);
-		this.hlt = Config.GLASS_HEALTH_FACTOR * apply(2 / Config.GLASS_HEALTH_FACTOR - 1, attrib[skcnv.hlt]);
-		this.mob = apply(0.8, attrib[skcnv.mob]);
-		this.rgn = apply(25, attrib[skcnv.rgn]);
-
-		this.brst = 0.3 * (0.5 * attrib[skcnv.atk] + 0.5 * attrib[skcnv.hlt] + attrib[skcnv.rgn]);
-	}
-
-	set(thing) {
-		this.raw[0] = thing[0];
-		this.raw[1] = thing[1];
-		this.raw[2] = thing[2];
-		this.raw[3] = thing[3];
-		this.raw[4] = thing[4];
-		this.raw[5] = thing[5];
-		this.raw[6] = thing[6];
-		this.raw[7] = thing[7];
-		this.raw[8] = thing[8];
-		this.raw[9] = thing[9];
-		this.update();
-	}
-
-	setCaps(thing) {
-		this.caps[0] = thing[0];
-		this.caps[1] = thing[1];
-		this.caps[2] = thing[2];
-		this.caps[3] = thing[3];
-		this.caps[4] = thing[4];
-		this.caps[5] = thing[5];
-		this.caps[6] = thing[6];
-		this.caps[7] = thing[7];
-		this.caps[8] = thing[8];
-		this.caps[9] = thing[9];
-		this.update();
-	}
-
-	maintain() {
-		if (this.level < Config.SKILL_CAP) {
-			if (this.score - this.deduction >= this.levelScore) {
-				this.deduction += this.levelScore;
-				this.level += 1;
-				this.points += this.levelPoints;
-				if (this.level == Config.TIER_1 || this.level == Config.TIER_2 || this.level == Config.TIER_3) {
-					this.canUpgrade = true;
-				}
-				this.update();
-				return true;
-			}
-		}
-		return false;
-	}
-
-	get levelScore() {
-		return Math.ceil(1.8 * Math.pow(this.level + 1, 1.8) - 2 * this.level + 1);
-	}
-
-	get progress() {
-		return (this.levelScore) ? (this.score - this.deduction) / this.levelScore : 0;
-	}
-
-	get levelPoints() {
-		if (levelers.findIndex(e => { return e === this.level; }) != -1) { return 1; } return 0;
-
-	}
-
-	cap(skill, real = false) {
-		if (!real && this.level < Config.SKILL_SOFT_CAP) {
-			return Math.round(this.caps[skcnv[skill]] * Config.SOFT_MAX_SKILL);
-		}
-		return this.caps[skcnv[skill]];
-	}
-
-	bleed(i, j) {
-		let a = ((i + 2) % 5) + 5 * j,
-			b = ((i + ((j === 1) ? 1 : 4)) % 5) + 5 * j;
-		let value = 0;
-		let denom = Math.max(Config.MAX_SKILL, this.caps[i + 5 * j]);
-		value += (1 - Math.pow(this.raw[a] / denom - 1, 2)) * this.raw[a] * Config.SKILL_LEAK;
-		value -= Math.pow(this.raw[b] / denom, 2) * this.raw[b] * Config.SKILL_LEAK;
-
-		return value;
-	}
-
-	upgrade(stat) {
-		if (this.points && this.amount(stat) < this.cap(stat)) {
-			this.change(stat, 1);
-			this.points -= 1;
-			return true;
-		}
-		return false;
-	}
-
-	title(stat) {
-		return this.name[skcnv[stat]];
-	}
-
-	/*
-	let i = skcnv[skill] % 5,
-	    j = (skcnv[skill] - i) / 5;
-	let roundvalue = Math.round(this.bleed(i, j) * 10);
-	let string = '';
-	if (roundvalue > 0) { string += '+' + roundvalue + '%'; }
-	if (roundvalue < 0) { string += '-' + roundvalue + '%'; }
-
-	return string;
-	*/
-
-	amount(skill) {
-		return this.raw[skcnv[skill]];
-	}
-
-	change(skill, levels) {
-		this.raw[skcnv[skill]] += levels;
-		this.update();
-	}
-
-	calculateJackpot() {
-		if (this.score > JACKPOT_THRESHOLD * JACKPOT_FACTOR) {
-			return Math.pow(this.score - JACKPOT_THRESHOLD, JACKPOT_POWER) + JACKPOT_THRESHOLD;
-		}
-		return this.score / JACKPOT_FACTOR;
-	}
-}
-
 // Define how guns work
 class Gun {
 	constructor(body, info) {
@@ -3439,7 +3211,7 @@ const sockets = (() => {
 					body.sendMessage('You have spawned! Welcome to the game.');
 					body.sendMessage('You will be invulnerable until you move or shoot.');
 					// Move the client camera
-					socket.talk('c', socket.camera.x, socket.camera.y, socket.camera.fov);
+					socket.talk('c', socket.camera.x, socket.camera.y, socket.camera.fov, null);
 					return player;
 				};
 			})();
