@@ -21,6 +21,7 @@ const { Config, BANNED_NAME_CHARACTERS, JACKPOT_FACTOR, JACKPOT_THRESHOLD, JACKP
 
 // Import utilities.
 const hshg = require('./lib/hshg');
+const { determineNearest, timeOfImpact } = require("./utils/physics");
 
 // Define player keys
 var keys = [
@@ -211,36 +212,6 @@ var Class = (() => {
 })();
 
 // Define IOs (AI)
-function nearest(array, location, test = () => { return true; }) {
-	let list = [];
-	let d;
-	if (!array.length) {
-		return undefined;
-	}
-	array.forEach(function (instance) {
-		d = Math.pow(instance.x - location.x, 2) + Math.pow(instance.y - location.y, 2);
-		if (test(instance, d)) {
-			list.push({ p: d, v: instance });
-		}
-	});
-	list.sort((a, b) => a.p - b.p);
-	return list.length ? list[0].v : undefined;
-}
-function timeOfImpact(p, v, s) {
-	// Requires relative position and velocity to aiming point
-	let a = s * s - (v.x * v.x + v.y * v.y);
-	let b = p.x * v.x + p.y * v.y;
-	let c = p.x * p.x + p.y * p.y;
-
-	let d = b * b + a * c;
-
-	let t = 0;
-	if (d >= 0) {
-		t = Math.max(0, (b + Math.sqrt(d)) / a);
-	}
-
-	return t * 0.9;
-}
 class IO {
 	constructor(body) {
 		this.body = body;
@@ -576,7 +547,7 @@ class io_nearestDifferentMaster extends IO {
 			}
 			// Lock new target if we still don't have one.
 			if (this.targetLock == null && this.validTargets.length) {
-				this.targetLock = (this.validTargets.length === 1) ? this.validTargets[0] : nearest(this.validTargets, { x: this.body.x, y: this.body.y });
+				this.targetLock = (this.validTargets.length === 1) ? this.validTargets[0] : determineNearest(this.validTargets, { x: this.body.x, y: this.body.y });
 				this.tick = -90;
 			}
 		}
@@ -625,7 +596,7 @@ class io_avoid extends IO {
 	think(input) {
 		let masterId = this.body.master.id;
 		let range = this.body.size * this.body.size * 100;
-		this.avoid = nearest(
+		this.avoid = determineNearest(
 			entities,
 			{ x: this.body.x, y: this.body.y },
 			function (test, sqrdst) {
@@ -4736,7 +4707,7 @@ var maintainloop = (() => {
 			return a;
 		}
 		let placeNewFood = (position, scatter, level, allowInNest = false) => {
-			let o = nearest(food, position);
+			let o = determineNearest(food, position);
 			let mitosis = false;
 			let seed = false;
 			// Find the nearest food and determine if we can do anything with it
@@ -4902,7 +4873,7 @@ var maintainloop = (() => {
 					overflow = 10;
 					// Find the nearest one that's not the last one
 					do {
-						o = nearest(food, { x: gauss(o.x, 30), y: gauss(o.y, 30), });
+						o = determineNearest(food, { x: gauss(o.x, 30), y: gauss(o.y, 30), });
 					} while (o.id === oldId && --overflow);
 					if (!overflow) continue;
 					// Configure for the nest if needed
