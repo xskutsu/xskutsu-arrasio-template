@@ -1,3 +1,5 @@
+import { Logger } from "../utils/logger";
+
 export type EncodableValue = string | number | boolean;
 
 const MAX_EIGHT_BIT_UNSIGNED: number = 0x100;
@@ -108,57 +110,60 @@ class PacketBuilder {
 
 export function encode(inputArray: EncodableValue[]): Uint8Array {
 	PacketBuilder.prepare();
-	for (const valueue of inputArray) {
-		if (typeof valueue === "string") {
-			PacketBuilder.writeString(valueue);
-		} else if (typeof valueue === "boolean") {
-			PacketBuilder.writeUint8(valueue ? Tag.TRUE : Tag.FALSE);
-		} else if (typeof valueue === "number") {
-			if (!Number.isFinite(valueue)) {
-				throw new Error("Cannot encode Infinity or NaN");
+	for (let i: number = 0; i < inputArray.length; i++) {
+		const value = inputArray[i];
+		if (typeof value === "string") {
+			PacketBuilder.writeString(value);
+		} else if (typeof value === "boolean") {
+			PacketBuilder.writeUint8(value ? Tag.TRUE : Tag.FALSE);
+		} else if (typeof value === "number") {
+			if (!Number.isFinite(value)) {
+				console.error(inputArray);
+				Logger.error(`Cannot encode Infinity or NaN at offset ${i}`);
 			}
-			if (Number.isInteger(valueue)) {
-				if (valueue >= 0) {
-					if (valueue < MAX_EIGHT_BIT_UNSIGNED) {
+			if (Number.isInteger(value)) {
+				if (value >= 0) {
+					if (value < MAX_EIGHT_BIT_UNSIGNED) {
 						PacketBuilder.writeUint8(Tag.UINT8);
-						PacketBuilder.writeUint8(valueue);
-					} else if (valueue < MAX_SIXTEEN_BIT_UNSIGNED) {
+						PacketBuilder.writeUint8(value);
+					} else if (value < MAX_SIXTEEN_BIT_UNSIGNED) {
 						PacketBuilder.writeUint8(Tag.UINT16);
-						PacketBuilder.writeUint16(valueue);
-					} else if (valueue < MAX_THIRTY_TWO_BIT_UNSIGNED) {
+						PacketBuilder.writeUint16(value);
+					} else if (value < MAX_THIRTY_TWO_BIT_UNSIGNED) {
 						PacketBuilder.writeUint8(Tag.UINT32);
-						PacketBuilder.writeUint32(valueue);
+						PacketBuilder.writeUint32(value);
 					} else {
 						PacketBuilder.writeUint8(Tag.FLOAT64);
-						PacketBuilder.writeFloat64(valueue);
+						PacketBuilder.writeFloat64(value);
 					}
 				} else {
-					if (valueue >= MIN_EIGHT_BIT_SIGNED) {
+					if (value >= MIN_EIGHT_BIT_SIGNED) {
 						PacketBuilder.writeUint8(Tag.INT8);
-						PacketBuilder.writeInt8(valueue);
-					} else if (valueue >= MIN_SIXTEEN_BIT_SIGNED) {
+						PacketBuilder.writeInt8(value);
+					} else if (value >= MIN_SIXTEEN_BIT_SIGNED) {
 						PacketBuilder.writeUint8(Tag.INT16);
-						PacketBuilder.writeInt16(valueue);
-					} else if (valueue >= MIN_THIRTY_TWO_BIT_SIGNED) {
+						PacketBuilder.writeInt16(value);
+					} else if (value >= MIN_THIRTY_TWO_BIT_SIGNED) {
 						PacketBuilder.writeUint8(Tag.INT32);
-						PacketBuilder.writeInt32(valueue);
+						PacketBuilder.writeInt32(value);
 					} else {
 						PacketBuilder.writeUint8(Tag.FLOAT64);
-						PacketBuilder.writeFloat64(valueue);
+						PacketBuilder.writeFloat64(value);
 					}
 				}
 			} else {
 				PacketBuilder.writeUint8(Tag.FLOAT32);
-				PacketBuilder.writeFloat32(valueue);
+				PacketBuilder.writeFloat32(value);
 			}
 		} else {
-			throw new Error(`Unsupported data type: ${typeof valueue}`);
+			console.error(inputArray);
+			Logger.error(`Unsupported data type: ${typeof value} at offset ${i}`);
 		}
 	}
 	return PacketBuilder.getPacket();
 }
 
-export function decode(rawBuffer: ArrayBuffer | Uint8Array): EncodableValue[] {
+export function decode(rawBuffer: ArrayBuffer | Uint8Array): EncodableValue[] | -1 {
 	const buffer: Uint8Array<ArrayBufferLike> = rawBuffer instanceof Uint8Array ? rawBuffer : new Uint8Array(rawBuffer);
 	const view: DataView<ArrayBufferLike> = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
 	let offset: number = 0;
@@ -213,7 +218,9 @@ export function decode(rawBuffer: ArrayBuffer | Uint8Array): EncodableValue[] {
 				offset += length;
 			}; break;
 			default: {
-				throw new Error(`Unknown Protocol Tag: ${tag} at offset ${offset - 1}`);
+				console.error(rawBuffer);
+				Logger.error(`Unknown Protocol Tag: ${tag} at offset ${offset - 1}`);
+				return -1;
 			};
 		}
 	}
