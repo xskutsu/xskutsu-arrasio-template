@@ -24,7 +24,7 @@ export function determineNearest<T extends Vector2>(array: T[], location: Vector
 	for (let i: number = 0; i < array.length; i++) {
 		const instance: T = array[i];
 		const distanceX: number = instance.x - locationX;
-		const distanceY: number = location.y - locationY;
+		const distanceY: number = instance.y - locationY;
 		const distanceSquared: number = distanceX * distanceX + distanceY * distanceY;
 		if (distanceSquared < shortestDistanceSquared) {
 			if (test(instance, distanceSquared)) {
