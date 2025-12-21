@@ -15,13 +15,14 @@ const { addArticle } = require("../shared/utils/strings");
 const protocol = require('../shared/network/fasttalk');
 const { random, randomAngle, randomRange, irandom, gauss, gaussInverse, gaussRing, chance, dice, choose, chooseChance, chooseN } = require("./utils/random");
 const { Room } = require("./game/room");
+const { determineNearest, timeOfImpact } = require("./utils/physics");
+const { lazyRealSizes } = require("./definitions/constants");
 
 // Import game settings.
 const { Config, BANNED_NAME_CHARACTERS, JACKPOT_FACTOR, JACKPOT_THRESHOLD, JACKPOT_POWER, BOSS_NAMES_A, BOSS_NAMES_CASTLE, BOSS_NAME_DEFAULT, BOT_NAMES } = require("./config");
 
 // Import utilities.
 const hshg = require('./lib/hshg');
-const { determineNearest, timeOfImpact } = require("./utils/physics");
 
 // Define player keys
 var keys = [
@@ -1054,17 +1055,6 @@ class Skill {
 		return this.score / JACKPOT_FACTOR;
 	}
 }
-
-const lazyRealSizes = (() => {
-	let o = [1, 1, 1];
-	for (var i = 3; i < 16; i++) {
-		// We say that the real size of a 0-gon, 1-gon, 2-gon is one, then push the real sizes of triangles, squares, etc...
-		o.push(
-			Math.sqrt((2 * Math.PI / i) * (1 / Math.sin(2 * Math.PI / i)))
-		);
-	}
-	return o;
-})();
 
 // Define how guns work
 class Gun {

@@ -97,6 +97,8 @@ export const JACKPOT_THRESHOLD: number = 26300;
 export const JACKPOT_FACTOR: number = 1.5;
 export const JACKPOT_POWER: number = 0.85;
 
+export const LAZY_REAL_SIZES_LIMIT: number = 16;
+
 export const BOT_NAMES: string[] = [
 	"Alice",
 	"Bob",
