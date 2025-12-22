@@ -1,5 +1,5 @@
 {
-	"name": "xskutsu-arrasio-template",
+	"name": "arrasio-redux",
 	"version": "1.0.0",
 	"description": "A fanmade sequel to diep.io",
 	"main": "server/server.js",

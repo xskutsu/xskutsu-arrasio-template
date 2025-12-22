@@ -924,7 +924,7 @@ global.time = 0;
 
 // Window setup <3
 global.mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry/i.test(navigator.userAgent);
-var serverName = 'Unknown Server';
+var serverName = 'arrasio redux';
 window.onload = () => {
 	// Server name stuff
 	switch (window.location.hostname) {
